@@ -1,0 +1,5 @@
+train: dataset/images/train  # 训练集图片路径
+val: dataset/images/val      # 验证集图片路径
+
+nc: 1                        # 类别数量 (这里只是血迹类别，所以是 1)
+names: ['blood']             # 类别名称 (可以根据需要修改)
