@@ -17,7 +17,7 @@ void loop() {
 
   // rotate clockwise full-speed
   servo.writeMicroseconds(2000);
-  delay(1798);//逆时针120度
+  delay(1800);//逆时针120度
   //360舵机不好精确控制角度有一个误差，暂时这么用把，等180度舵机来了换
 
   // rotation stopped
