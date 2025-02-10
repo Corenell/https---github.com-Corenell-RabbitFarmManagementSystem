@@ -6,14 +6,12 @@
 // 硬件引脚定义
 #define LOADCELL_DOUT_PIN 17
 #define LOADCELL_SCK_PIN  16
-//#define SERVO360_PIN      25  // 输料螺杆舵机（连续旋转）
-//#define SERVO180_PIN      26  // 翻斗舵机
 
 #define CALIBRATION_FACTOR 695 //校准因子
 
 // 系统参数
-const float TARGET_WEIGHT = 50.0;  // 目标投喂量（克）
-const int FEEDING_SPEED = 2000;     // 输料舵机全速运转角度 1000-1500逆
+const float TARGET_WEIGHT = 15.0;  // 目标投喂量（克）
+const int FEEDING_SPEED = 2000;     // 输料舵机全速运转角度 1500-2000 顺
 const int STOP_ANGLE = 1500;         // 输料舵机停止角度
 const int DUMP_ANGLE = 1;        // 翻斗倾倒角度
 const int RETURN_ANGLE = 120;        // 翻斗复位角度
