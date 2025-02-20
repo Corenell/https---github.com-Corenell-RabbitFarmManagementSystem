@@ -2,11 +2,11 @@
 #include "HX711.h"
 #include "soc/rtc.h"
 
-#define CALIBRATION_FACTOR 695 //校准因子
+#define CALIBRATION_FACTOR 719 //校准因子
 
 // HX711接线
-const int LOADCELL_DOUT_PIN = 16;
-const int LOADCELL_SCK_PIN = 4;
+const int LOADCELL_DOUT_PIN = 17;
+const int LOADCELL_SCK_PIN = 16;
 
 HX711 scale;
 
