@@ -7,7 +7,7 @@
 #define LOADCELL_DOUT_PIN 17
 #define LOADCELL_SCK_PIN  16
 
-#define CALIBRATION_FACTOR 695 //校准因子
+#define CALIBRATION_FACTOR 719 //校准因子
 
 // 系统参数
 const float TARGET_WEIGHT = 15.0;  // 目标投喂量（克）
