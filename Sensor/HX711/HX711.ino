@@ -6,7 +6,7 @@
 
 // HX711接线
 const int LOADCELL_DOUT_PIN = 17;
-const int LOADCELL_SCK_PIN = 16;
+const int LOADCELL_SCK_PIN = 16; //接线
 
 HX711 scale;
 
