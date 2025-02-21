@@ -11,6 +11,7 @@
 
 // 系统参数
 const float TARGET_WEIGHT = 15.0;  // 目标投喂量（克）
+
 const int FEEDING_SPEED = 2000;     // 输料舵机全速运转角度 1500-2000 顺
 const int STOP_ANGLE = 1500;         // 输料舵机停止角度
 const int DUMP_ANGLE = 1;        // 翻斗倾倒角度
