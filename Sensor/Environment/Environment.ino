@@ -7,7 +7,20 @@
 
 #define MQ135D 25       //定义光敏传感器数字输出引脚
 #define MQ135A 34       //定义光敏传感器模拟输出引脚
-//I2C接线
+
+
+//I2C接线// 引脚定义
+const int FAN_PIN = 13;  // 风扇连接的 PWM 引脚
+const int PUMP_PIN = 12;  // 风扇连接的 PWM 引脚
+
+// PWM 参数
+const int PWM_FREQ = 1000;  // PWM 频率（Hz）
+const int PWM_RESOLUTION = 8;  // PWM 分辨率（8 位，范围为 0-255）
+//const int PWM_CHANNEL = 0;  // PWM 通道（ESP32 有 16 个通道，0-15）
+
+const int PWM_FREQ2 = 1000;  // PWM 频率（Hz）
+const int PWM_RESOLUTION2 = 8;  // PWM 分辨率（8 位，范围为 0-255）
+//const int PWM_CHANNEL2 = 1;  // PWM 通道（ESP32 有 16 个通道，0-15）
 //SDA 21  SCL 22
 
 // WiFi 和 MQTT 连接信息
@@ -139,8 +152,17 @@ void MQTT_response2(String receivedMessage) {
   }
 
   // 提取 fan_power 和 water_curtain_power
-  String fanPower = doc["content"]["fan_power"];
-  String waterCurtainPower = doc["content"]["water_curtain_power"];
+  int fanPower = doc["content"]["fan_power"];
+  int waterCurtainPower = doc["content"]["water_curtain_power"];
+
+  fanPower = constrain(fanPower, 0, 100);
+  waterCurtainPower = constrain(waterCurtainPower, 0, 100);
+
+  int power = round(fanPower * 255.0 / 100.0);
+  int power2 = round(waterCurtainPower * 255.0 / 100.0);
+  
+  ledcWrite(FAN_PIN, power);  // 设置 PWM 占空比
+  ledcWrite(PUMP_PIN, power2);  // 设置 PWM 占空比
 
   // 输出结果
   Serial.print("Fan Power: ");
@@ -171,6 +193,9 @@ void setup() {
   pinMode(MQ135A, INPUT);//定义GPIO34为输入模式
   Wire.begin(); 
   bmp280.begin();  //初始化BMP280
+  // 配置 PWM
+  ledcAttach(FAN_PIN, PWM_FREQ, PWM_RESOLUTION); 
+  ledcAttach(PUMP_PIN, PWM_FREQ2, PWM_RESOLUTION2);  
   MQTT_Init();
   
   while(!aht.begin()){
