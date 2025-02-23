@@ -13,6 +13,7 @@ const int DELAY_BETWEEN_MOVES = 1000;  // 正反转之间的延时（毫秒#incl
 #include <PubSubClient.h> // 用于 MQTT 连接和通信
 #include <ArduinoJson.h>  // 用于构造 JSON 报文
 
+
 // 引脚定义
 const int PUL_PIN = 5;  // 脉冲信号引脚（PUL）
 const int DIR_PIN = 6;  // 方向信号引脚（DIR）

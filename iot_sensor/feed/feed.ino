@@ -583,6 +583,7 @@ void setup() {
   servo180.write(RETURN_ANGLE);  //初始水平状态120
   Serial.println("Servo Ready!");
 
+  
   // 初始化称重模块
   scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
   scale.set_scale(CALIBRATION_FACTOR);  //设置校准因子

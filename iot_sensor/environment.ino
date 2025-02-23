@@ -23,6 +23,8 @@ const int PWM_RESOLUTION2 = 8;  // PWM 分辨率（8 位，范围为 0-255）
 //const int PWM_CHANNEL2 = 1;  // PWM 通道（ESP32 有 16 个通道，0-15）
 //SDA 21  SCL 22
 
+float weight = 0;
+
 // WiFi 和 MQTT 连接信息
 const char* ssid = "Creator_Space";
 const char* password = "iloveSCU";
@@ -99,8 +101,6 @@ void callback(char* topic, byte* message, unsigned int length) {
   }
 }
 
-
-
 void MQTT_response1(String requestId) {
 
   //uint32_t pressure = bmp280.getPressure();  //BMP280填充气压
@@ -109,7 +109,7 @@ void MQTT_response1(String requestId) {
   float tempread = temp.temperature;
   float humiread = humidity.relative_humidity;
   float NH3Value = analogRead(MQ135A);
-  float weight = 0.12;
+  weight = 0.12;
   //调试输出
   Serial.print("温度: "); Serial.print(tempread); Serial.println("℃");
   Serial.print("湿度: "); Serial.print(humiread); Serial.println("%");
@@ -123,6 +123,7 @@ void MQTT_response1(String requestId) {
   responseDoc["humidity"] = humiread;
   responseDoc["ammonia"] = NH3Value;
   responseDoc["weight"] = weight;
+  responseDoc["code"] = ;
   // 序列化响应消息
   String responseMessage;
   serializeJson(responseDoc, responseMessage);
@@ -137,8 +138,6 @@ void MQTT_response1(String requestId) {
   }
 }
 
-
-
 void MQTT_response2(String receivedMessage) {
  JsonDocument doc;
   DeserializationError error = deserializeJson(doc, receivedMessage);
@@ -147,25 +146,35 @@ void MQTT_response2(String receivedMessage) {
     Serial.println(error.f_str());
     return;
   }
+
+
+
+
+
   // 提取 fan_power 和 water_curtain_power
   int fanPower = doc["content"]["fan_power"];
   int waterCurtainPower = doc["content"]["water_curtain_power"];
+  // 剩余饲料量 = doc["content"]["remaining_feed"];存入全局变量中
+  // 如果提取到 fan_power 和 water_curtain_power执行风机水帘执行函数
+  
 
-
-  fanPower = constrain(fanPower, 0, 100);
-  waterCurtainPower = constrain(waterCurtainPower, 0, 100);
-  int power = round(fanPower * 255.0 / 100.0);
-  int power2 = round(waterCurtainPower * 255.0 / 100.0);
-
-  ledcWrite(FAN_PIN, power);  // 设置 PWM 占空比
-  ledcWrite(PUMP_PIN, power2);  // 设置 PWM 占空比
-
-  // 输出结果
-  Serial.print("Fan Power: ");
-  Serial.println(fanPower);
-  Serial.print("Water Curtain Power: ");
-  Serial.println(waterCurtainPower);
 }
+
+  // 风机水帘执行函数
+  // fanPower = constrain(fanPower, 0, 100);
+  // waterCurtainPower = constrain(waterCurtainPower, 0, 100);
+  // int power = round(fanPower * 255.0 / 100.0);
+  // int power2 = round(waterCurtainPower * 255.0 / 100.0);
+
+  // ledcWrite(FAN_PIN, power);  // 设置 PWM 占空比
+  // ledcWrite(PUMP_PIN, power2);  // 设置 PWM 占空比
+
+  // // 输出结果
+  // Serial.print("Fan Power: ");
+  // Serial.println(fanPower);
+  // Serial.print("Water Curtain Power: ");
+  // Serial.println(waterCurtainPower);
+
 
 // MQTT 重新连接函数
 void reconnect() {
@@ -225,4 +234,3 @@ void loop() {
 
 
 
-// 接收剩余饲料量
