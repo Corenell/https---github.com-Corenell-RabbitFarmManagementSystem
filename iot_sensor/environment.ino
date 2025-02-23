@@ -109,7 +109,6 @@ void MQTT_response1(String requestId) {
   float tempread = temp.temperature;
   float humiread = humidity.relative_humidity;
   float NH3Value = analogRead(MQ135A);
-  weight = 0.12;
   //调试输出
   Serial.print("温度: "); Serial.print(tempread); Serial.println("℃");
   Serial.print("湿度: "); Serial.print(humiread); Serial.println("%");
