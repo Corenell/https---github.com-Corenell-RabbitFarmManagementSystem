@@ -4,8 +4,8 @@ const int DIR_PIN = 17;  // 方向信号引脚（DIR）
 const int EN_PIN = 4;    //使能引脚
 
 // 参数定义
-const long PULSE_COUNT = 500;  // 脉冲数量（控制电机旋转角度）
-const int PULSE_DELAY = 26;    // 脉冲周期（微秒，控制电机转速）
+const long PULSE_COUNT = 20000;  // 脉冲数量（控制电机旋转角度）
+const int PULSE_DELAY = 80;    // 脉冲周期（微秒，控制电机转速）
 
 void setup() {
   // 初始化引脚
@@ -16,7 +16,7 @@ void setup() {
 }
 
 void loop() {
-  // 正转
+  // 正转（远离电机）
   digitalWrite(DIR_PIN, HIGH);  // 设置方向为正转
   generatePulses(PULSE_COUNT, PULSE_DELAY);  // 生成脉冲
   delay(5000);  // 延时
