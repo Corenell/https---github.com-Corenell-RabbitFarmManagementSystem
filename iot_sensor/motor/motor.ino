@@ -3,25 +3,14 @@
 #include <ArduinoJson.h>  // 用于构造 JSON 报文
 
 // 引脚定义
-const int PUL_PIN = 5;  // 脉冲信号引脚（PUL）
-const int DIR_PIN = 6;  // 方向信号引脚（DIR）
+const int PUL_PIN = 16;  // 脉冲信号引脚（PUL）
+const int DIR_PIN = 17;  // 方向信号引脚（DIR）
+const int EN_PIN = 4;    //使能引脚
 
 // 参数定义
-const long PULSE_COUNT = 110000;  // 脉冲数量（控制电机旋转角度）
-const int PULSE_DELAY = 26;       // 脉冲周期（微秒，控制电机转速）
-const int DELAY_BETWEEN_MOVES = 1000;  // 正反转之间的延时（毫秒#include <WiFi.h>         // 用于连接 WiFi
-#include <PubSubClient.h> // 用于 MQTT 连接和通信
-#include <ArduinoJson.h>  // 用于构造 JSON 报文
-
-
-// 引脚定义
-const int PUL_PIN = 5;  // 脉冲信号引脚（PUL）
-const int DIR_PIN = 6;  // 方向信号引脚（DIR）
-
-// 参数定义
-const long PULSE_COUNT = 110000;  // 脉冲数量（控制电机旋转角度）
-const int PULSE_DELAY = 26;       // 脉冲周期（微秒，控制电机转速）
-const int DELAY_BETWEEN_MOVES = 1000;  // 正反转之间的延时（毫秒）
+const long PULSE_COUNT = 5000;  // 脉冲数量（控制电机旋转角度）
+const int PULSE_DELAY = 80;       // 脉冲周期（微秒，控制电机转速）
+//const int DELAY_BETWEEN_MOVES = 1000;  // 正反转之间的延时（毫秒#include <WiFi.h>         // 用于连接 WiFi
 
 
 // WiFi 和 MQTT 连接信息
@@ -114,14 +103,29 @@ void MQTT_response1(String receivedMessage) {
   // 解析json数据
   int feed = doc["feed"];
   Serial.println(feed);
-
+  if(   ){
+    Moving();
+  }
 
   //当json数据满足一定条件时
   // 执行函数A
   // 小车开始运动，运动到指定位置时，运执行停止信号函数MQTT_response2() 
 }
 
+void Moving(){
+  // 正转（远离电机）
+  digitalWrite(DIR_PIN, HIGH);  // 设置方向为正转
+  generatePulses(PULSE_COUNT, PULSE_DELAY);  // 生成脉冲
+}
 
+void generatePulses(long pulseCount, int pulseDelay) {
+  for (long i = 0; i < pulseCount; i++) {
+    digitalWrite(PUL_PIN, HIGH);  // 发送 HIGH 脉冲
+    delayMicroseconds(pulseDelay);  // 延时
+    digitalWrite(PUL_PIN, LOW);  // 发送 LOW 脉冲
+    delayMicroseconds(pulseDelay);  // 延时
+  }
+}
 
 
 // 执行函数B
@@ -176,8 +180,10 @@ void setup() {
   Serial.begin(115200);//初始化串口
   MQTT_Init();
   // 初始化引脚
-  // pinMode(PUL_PIN, OUTPUT);
-  // pinMode(DIR_PIN, OUTPUT);
+  pinMode(PUL_PIN, OUTPUT);
+  pinMode(DIR_PIN, OUTPUT);
+  pinMode(EN_PIN, OUTPUT);
+  digitalWrite(EN_PIN,LOW);
 }
 
 void loop() {
@@ -186,23 +192,4 @@ void loop() {
   }
   client.loop();
 }
-  // 正转
-//   digitalWrite(DIR_PIN, HIGH);  // 设置方向为正转
-//   generatePulses(PULSE_COUNT, PULSE_DELAY);  // 生成脉冲
-//   delay(DELAY_BETWEEN_MOVES);  // 延时
 
-//   // 反转
-//   digitalWrite(DIR_PIN, LOW);  // 设置方向为反转
-//   generatePulses(PULSE_COUNT, PULSE_DELAY);  // 生成脉冲
-//   delay(DELAY_BETWEEN_MOVES);  // 延时
-// }
-
-// // 生成指定数量的脉冲
-// void generatePulses(long pulseCount, int pulseDelay) {
-//   for (long i = 0; i < pulseCount; i++) {
-//     digitalWrite(PUL_PIN, HIGH);  // 发送 HIGH 脉冲
-//     delayMicroseconds(pulseDelay);  // 延时
-//     digitalWrite(PUL_PIN, LOW);  // 发送 LOW 脉冲
-//     delayMicroseconds(pulseDelay);  // 延时
-//   }
-）

@@ -17,7 +17,7 @@ void setup() {
 }
 
 void loop() {
-  power = 200;
+  power = 50;
   ledcWrite(FAN_PIN, power);  // 设置 PWM 占空比
-  delay(10000);
+  delay(1000);
 }
