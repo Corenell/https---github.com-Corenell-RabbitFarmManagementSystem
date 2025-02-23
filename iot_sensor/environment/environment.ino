@@ -31,13 +31,10 @@ const int mqttPort = 1883;
 const char* clientId = "67b683d83f28ab3d0384f27e_environment_0_0_2025022306";
 const char* mqttUser = "67b683d83f28ab3d0384f27e_environment";
 const char* mqttPassword = "17a85498dc8339943237186c61e7aa2861be33405971bd0eab52d080f762ae92";
-//mqtt连接信息
-String half_get_properties = "$oc/devices/67b683d83f28ab3d0384f27e_environment/sys/properties/get/request_id=";
-String half_response_properties = "$oc/devices/67b683d83f28ab3d0384f27e_environment/sys/properties/get/response/request_id=";
-String get_messages = "$oc/devices/67b683d83f28ab3d0384f27e_environment/sys/messages/down";
 
-int i = 1;
-float weight = -1;
+String half_get_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/request_id=");
+String half_response_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/response/request_id=");
+String get_messages = String("$oc/devices/") + mqttUser + String("/sys/messages/down");
 
 BMP280 bmp280;
 Adafruit_AHTX0 aht;
@@ -73,10 +70,7 @@ void MQTT_Init() {
 
 }
 
-
-
 void callback(char* topic, byte* message, unsigned int length) {
-
   Serial.print("topic: ");
   Serial.println(topic);
   String topicStr = String(topic);
@@ -87,22 +81,36 @@ void callback(char* topic, byte* message, unsigned int length) {
   }
   Serial.print("message: ");
   Serial.println(receivedMessage);
-  
+  JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, receivedMessage);
+    if (error) {
+     Serial.print("Failed to parse JSON: ");
+     Serial.println(error.f_str());
+      return;
+    }
+
+
+  // 查询设备属性
   if (topicStr.startsWith(half_get_properties)) {
     String requestId = topicStr.substring(half_get_properties.length());
-    MQTT_response1(requestId);  // 调用 MQTT_response1
-}
+    
+    String type = doc["service_id"];
+    if(type == "get_tha"){
+      get_tha(requestId);
+    }
+  }
+
+  // 下发设备消息
   else if (topicStr == get_messages) {
-    MQTT_response2(receivedMessage);  // 调用 MQTT_response2
-  }
-  else {
-    // 如果 topic 不是指定的 topic
-    Serial.println("Unknown topic");
+    String type = doc["content"]["type"];
+    if(type == "post_fw"){
+       post_fw(doc);
+    }
+  
   }
 }
 
-void MQTT_response1(String requestId) {
-
+void get_tha(String requestId) {
   //uint32_t pressure = bmp280.getPressure();  //BMP280填充气压
   sensors_event_t humidity, temp;  //AHT20填充温湿度
   aht.getEvent(&humidity, &temp);
@@ -113,7 +121,7 @@ void MQTT_response1(String requestId) {
   Serial.print("温度: "); Serial.print(tempread); Serial.println("℃");
   Serial.print("湿度: "); Serial.print(humiread); Serial.println("%");
   //Serial.print("气压: "); Serial.print(pressure/1000); Serial.println("KPa");
-  Serial.println(NH3Value);//串口打印模拟信号0-4095
+  Serial.print("氨气浓度: ");Serial.println(NH3Value);//串口打印模拟信号0-4095
 
 
   // 构造 JSON 响应
@@ -121,14 +129,6 @@ void MQTT_response1(String requestId) {
   responseDoc["temperature"] = tempread;
   responseDoc["humidity"] = humiread;
   responseDoc["ammonia"] = NH3Value;
-  responseDoc["weight"] = weight;
-  responseDoc["cageid"] = i;
-  if(i>=4){
-    i = 1;
-  }
-  else{
-    i++;
-  }
   // 序列化响应消息
   String responseMessage;
   serializeJson(responseDoc, responseMessage);
@@ -141,40 +141,22 @@ void MQTT_response1(String requestId) {
   }
 }
 
-void MQTT_response2(String receivedMessage) {
- JsonDocument doc;
-  DeserializationError error = deserializeJson(doc, receivedMessage);
-  if (error) {
-    Serial.print("Failed to parse JSON: ");
-    Serial.println(error.f_str());
-    return;
-  }
 
-
-  // 提取 fan_power 和 water_curtain_power
-  int fanPower = doc["content"]["message"]["fan_power"];
-  int waterCurtainPower = doc["content"]["message"]["water_curtain_power"];
-  weight = -1;
-  if (doc["content"]["message"].containsKey("remaining_feed")) {
-    weight = doc["content"]["message"]["remaining_feed"];
-  }
+void post_fw(JsonDocument doc) {
+  int fanPower = doc["content"]["fan_power"];
+  int waterCurtainPower = doc["content"]["water_curtain_power"];
   Serial.println(fanPower);
   Serial.println(waterCurtainPower);
-  Serial.println(weight);
 
   if(fanPower>0||waterCurtainPower>40){
   control(fanPower, waterCurtainPower);
-}
-  
-
-
-
+  }
 }
 
 void control(int fanPower, int waterCurtainPower) {
 
 
-  fanPower = constrain(fanPower, 40, 100);
+  fanPower = constrain(fanPower, 0, 100);
   waterCurtainPower = constrain(waterCurtainPower, 40, 100);
   int power = round(fanPower * 255.0 / 100.0);
   int power2 = round(waterCurtainPower * 255.0 / 100.0);
@@ -208,8 +190,6 @@ void reconnect() {
   }
 }
 
-
-
 void setup() {
   Serial.begin(115200);//初始化串口
   Serial.println("AHT20+MQ135");
@@ -230,9 +210,6 @@ void setup() {
   Serial.println("AHT20 found");
 
 }
-
-
-
 
 void loop() {
 
