@@ -1,6 +1,6 @@
 
 // 引脚定义
-const int FAN_PIN = 12;  // 风扇连接的 PWM 引脚
+const int FAN_PIN = 13;  // 风扇连接的 PWM 引脚
 
 // PWM 参数
 const int PWM_FREQ = 1000;  // PWM 频率（Hz）
@@ -17,7 +17,7 @@ void setup() {
 }
 
 void loop() {
-  power = 127;
+  power = 200;
   ledcWrite(FAN_PIN, power);  // 设置 PWM 占空比
-  //delay(10000);
+  delay(10000);
 }
