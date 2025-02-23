@@ -28,45 +28,19 @@ const char* ssid = "Creator_Space";
 const char* password = "iloveSCU";
 const char* mqttServer = "ef861ca468.st1.iotda-device.cn-north-4.myhuaweicloud.com";
 const int mqttPort = 1883;
-const char* clientId = "67b683d83f28ab3d0384f27e_rabbit_0_0_2025022101";
-const char* mqttUser = "67b683d83f28ab3d0384f27e_rabbit";
-const char* mqttPassword = "7be5c6ed9fe56b50c0dcb0bc443b577c373d2e15ac94345746b0646cfdd3b4fb";
-String half_get_properties = "$oc/devices/67b683d83f28ab3d0384f27e_rabbit/sys/properties/get/request_id=";
-String half_response_properties = "$oc/devices/67b683d83f28ab3d0384f27e_rabbit/sys/properties/get/response/request_id=";
-String get_messages = "$oc/devices/67b683d83f28ab3d0384f27e_rabbit/sys/messages/down";
+const char* clientId = "67b683d83f28ab3d0384f27e_environment_0_0_2025022306";
+const char* mqttUser = "67b683d83f28ab3d0384f27e_environment";
+const char* mqttPassword = "17a85498dc8339943237186c61e7aa2861be33405971bd0eab52d080f762ae92";
+//mqtt连接信息
+String half_get_properties = "$oc/devices/67b683d83f28ab3d0384f27e_environment/sys/properties/get/request_id=";
+String half_response_properties = "$oc/devices/67b683d83f28ab3d0384f27e_environment/sys/properties/get/response/request_id=";
+String get_messages = "$oc/devices/67b683d83f28ab3d0384f27e_environment/sys/messages/down";
 
 
 BMP280 bmp280;
 Adafruit_AHTX0 aht;
 WiFiClient espClient;
 PubSubClient client(espClient);
-
-void callback(char* topic, byte* message, unsigned int length) {
-  Serial.print("Message arrived on topic: ");
-  Serial.println(topic);
-  String topicStr = String(topic);
-  String receivedMessage = ""; 
-  for (int i = 0; i < length; i++) {
-    receivedMessage += (char)message[i];
-  }
-  Serial.print("Message: ");
-  Serial.println(receivedMessage);
-  
-  if (topicStr.startsWith(half_get_properties)) {
-    String requestId = topicStr.substring(half_get_properties.length());
-    Serial.print("Extracted requestId: ");
-    Serial.println(requestId);
-    MQTT_response1(requestId);  // 调用 MQTT_response1
-}
-  else if (topicStr == get_messages) {
-    MQTT_response2(receivedMessage);  // 调用 MQTT_response2
-  }
-  else {
-    // 如果 topic 不是指定的 topic
-    Serial.println("Unknown topic");
-  }
-}
-
 
 void MQTT_Init() {
   Serial.println("Booting");
@@ -98,69 +72,91 @@ void MQTT_Init() {
 }
 
 
+
+void callback(char* topic, byte* message, unsigned int length) {
+
+  Serial.print("topic: ");
+  Serial.println(topic);
+  String topicStr = String(topic);
+
+  String receivedMessage = ""; 
+  for (int i = 0; i < length; i++) {
+    receivedMessage += (char)message[i];
+  }
+  Serial.print("message: ");
+  Serial.println(receivedMessage);
+  
+  if (topicStr.startsWith(half_get_properties)) {
+    String requestId = topicStr.substring(half_get_properties.length());
+    MQTT_response1(requestId);  // 调用 MQTT_response1
+}
+  else if (topicStr == get_messages) {
+    MQTT_response2(receivedMessage);  // 调用 MQTT_response2
+  }
+  else {
+    // 如果 topic 不是指定的 topic
+    Serial.println("Unknown topic");
+  }
+}
+
+
+
 void MQTT_response1(String requestId) {
-  Serial.print("Extracted requestId: ");
-  Serial.println(requestId);
 
   //uint32_t pressure = bmp280.getPressure();  //BMP280填充气压
   sensors_event_t humidity, temp;  //AHT20填充温湿度
   aht.getEvent(&humidity, &temp);
   float tempread = temp.temperature;
   float humiread = humidity.relative_humidity;
-
-  int NH3Value = analogRead(MQ135A);
-  NH3Value = 3;
+  float NH3Value = analogRead(MQ135A);
+  float weight = 0.12;
   //调试输出
   Serial.print("温度: "); Serial.print(tempread); Serial.println("℃");
   Serial.print("湿度: "); Serial.print(humiread); Serial.println("%");
   //Serial.print("气压: "); Serial.print(pressure/1000); Serial.println("KPa");
-  Serial.println(digitalRead(MQ135D));//串口打印数字信号
   Serial.println(NH3Value);//串口打印模拟信号0-4095
 
 
-  String JSONmessageBuffer;
-  StaticJsonDocument<256> responseDoc;
-  responseDoc["code"] = 200;
+  // 构造 JSON 响应
+  JsonDocument responseDoc;
   responseDoc["temperature"] = tempread;
   responseDoc["humidity"] = humiread;
   responseDoc["ammonia"] = NH3Value;
+  responseDoc["weight"] = weight;
   // 序列化响应消息
   String responseMessage;
   serializeJson(responseDoc, responseMessage);
-
   // 更新响应的主题，包含 request_id
-  String responseTopic = half_get_properties + requestId;
-  Serial.println(responseTopic);
+
+
+  String responseTopic = half_response_properties + requestId;
   if (client.publish(responseTopic.c_str(), responseMessage.c_str())) {
-    Serial.println("Response sent successfully");
+    Serial.println("Response sent success");
   } else {
     Serial.println("Error sending response");
   }
 }
 
+
+
 void MQTT_response2(String receivedMessage) {
-  // 创建一个 JSON 文档
-  DynamicJsonDocument doc(256);
-
-  // 解析 JSON 数据
+ JsonDocument doc;
   DeserializationError error = deserializeJson(doc, receivedMessage);
-
   if (error) {
     Serial.print("Failed to parse JSON: ");
     Serial.println(error.f_str());
     return;
   }
-
   // 提取 fan_power 和 water_curtain_power
   int fanPower = doc["content"]["fan_power"];
   int waterCurtainPower = doc["content"]["water_curtain_power"];
 
+
   fanPower = constrain(fanPower, 0, 100);
   waterCurtainPower = constrain(waterCurtainPower, 0, 100);
-
   int power = round(fanPower * 255.0 / 100.0);
   int power2 = round(waterCurtainPower * 255.0 / 100.0);
-  
+
   ledcWrite(FAN_PIN, power);  // 设置 PWM 占空比
   ledcWrite(PUMP_PIN, power2);  // 设置 PWM 占空比
 
@@ -171,6 +167,7 @@ void MQTT_response2(String receivedMessage) {
   Serial.println(waterCurtainPower);
 }
 
+// MQTT 重新连接函数
 void reconnect() {
   int attempt = 0;
   while (!client.connected()) {
@@ -181,6 +178,11 @@ void reconnect() {
       Serial.printf("Failed to reconnect, state: %d. Retrying...\n", client.state());
       delay(6000);
     }
+    // 添加超时机制
+    if (attempt > 30) {
+      Serial.println("Reconnect timeout, restarting...");
+      ESP.restart();
+    }
   }
 }
 
@@ -189,22 +191,26 @@ void reconnect() {
 void setup() {
   Serial.begin(115200);//初始化串口
   Serial.println("AHT20+MQ135");
+  MQTT_Init();
   pinMode(MQ135D, INPUT);//定义GPIO15为输入模式
   pinMode(MQ135A, INPUT);//定义GPIO34为输入模式
   Wire.begin(); 
+
   bmp280.begin();  //初始化BMP280
-  // 配置 PWM
+
   ledcAttach(FAN_PIN, PWM_FREQ, PWM_RESOLUTION); 
-  ledcAttach(PUMP_PIN, PWM_FREQ2, PWM_RESOLUTION2);  
-  MQTT_Init();
-  
+  ledcAttach(PUMP_PIN, PWM_FREQ2, PWM_RESOLUTION2); 
+  //Aht20初始化
   while(!aht.begin()){
     Serial.println("Aht20 initial error!");
     delay(500);
-  }  //Aht20初始化
-
+  }
   Serial.println("AHT20 found");
+
 }
+
+
+
 
 void loop() {
 
