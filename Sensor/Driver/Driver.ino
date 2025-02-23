@@ -11,6 +11,7 @@ void setup() {
   // 初始化引脚
   pinMode(PUL_PIN, OUTPUT);
   pinMode(DIR_PIN, OUTPUT);
+  pinMode(EN_PIN, OUTPUT);
   digitalWrite(EN_PIN,LOW);
 }
 
@@ -19,12 +20,12 @@ void loop() {
   digitalWrite(DIR_PIN, HIGH);  // 设置方向为正转
   generatePulses(PULSE_COUNT, PULSE_DELAY);  // 生成脉冲
   delay(5000);  // 延时
-/*
+
   // 反转
   digitalWrite(DIR_PIN, LOW);  // 设置方向为反转
   generatePulses(PULSE_COUNT, PULSE_DELAY);  // 生成脉冲
-  delay(DELAY_BETWEEN_MOVES);  // 延时
-  */
+  delay(5000);  // 延时
+  
 }
 
 // 生成指定数量的脉冲
