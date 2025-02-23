@@ -127,6 +127,8 @@ void Moving(){
   digitalWrite(DIR_PIN, HIGH);  // 设置方向为正转
   generatePulses(PULSE_COUNT, PULSE_DELAY);  // 生成脉冲
   Serial.println("move");
+  get_s();
+  // 上云传函数
 }
 void generatePulses(long pulseCount, int pulseDelay) {
   for (long i = 0; i < pulseCount; i++) {
@@ -147,6 +149,26 @@ void response_sf(JsonDocument doc,String requestId) {
   if(feed == 1){
     Moving();
   }
+
+
+
+void get_s() {
+  JsonDocument responseDoc;
+  JsonArray services = responseDoc.createNestedArray("services");
+  JsonObject service = services.createNestedObject();
+  service["service_id"] = "stop";
+  JsonObject properties = service.createNestedObject("properties");
+  properties["state"] = 1;
+  String responseMessage;
+  serializeJson(responseDoc, responseMessage);
+  String responseTopic = post_properties;
+  if (client.publish(responseTopic.c_str(), responseMessage.c_str())) {
+    Serial.println("Response sent success");
+  } else {
+    Serial.println("Error sending response");
+  }
+}
+
 
   JsonDocument responseDoc;
   responseDoc["state"] = 1;
