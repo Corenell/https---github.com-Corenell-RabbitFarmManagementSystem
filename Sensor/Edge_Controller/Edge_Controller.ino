@@ -75,6 +75,10 @@ void setup() {
 void loop() {
   illume();
   bottom();
-
+  /*
+  if(response == 1){
+    //MQTT发送
+  }
+  */
   delay(20); // 消抖延时兼功耗控制
 }
