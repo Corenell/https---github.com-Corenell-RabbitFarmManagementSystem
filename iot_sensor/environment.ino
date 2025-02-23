@@ -23,10 +23,8 @@ const int PWM_RESOLUTION2 = 8;  // PWM 分辨率（8 位，范围为 0-255）
 //const int PWM_CHANNEL2 = 1;  // PWM 通道（ESP32 有 16 个通道，0-15）
 //SDA 21  SCL 22
 
-float weight = 0;
-
 // WiFi 和 MQTT 连接信息
-const char* ssid = "Creator_Space";
+const char* ssid = "SCU_Makers";
 const char* password = "iloveSCU";
 const char* mqttServer = "ef861ca468.st1.iotda-device.cn-north-4.myhuaweicloud.com";
 const int mqttPort = 1883;
@@ -38,6 +36,8 @@ String half_get_properties = "$oc/devices/67b683d83f28ab3d0384f27e_environment/s
 String half_response_properties = "$oc/devices/67b683d83f28ab3d0384f27e_environment/sys/properties/get/response/request_id=";
 String get_messages = "$oc/devices/67b683d83f28ab3d0384f27e_environment/sys/messages/down";
 
+int i = 1;
+float weight = -1;
 
 BMP280 bmp280;
 Adafruit_AHTX0 aht;
@@ -123,12 +123,16 @@ void MQTT_response1(String requestId) {
   responseDoc["humidity"] = humiread;
   responseDoc["ammonia"] = NH3Value;
   responseDoc["weight"] = weight;
-  responseDoc["code"] = ;
+  responseDoc["cageid"] = i;
+  if(i>=4){
+    i = 1;
+  }
+  else{
+    i++;
+  }
   // 序列化响应消息
   String responseMessage;
   serializeJson(responseDoc, responseMessage);
-  // 更新响应的主题，包含 request_id
-
 
   String responseTopic = half_response_properties + requestId;
   if (client.publish(responseTopic.c_str(), responseMessage.c_str())) {
@@ -148,33 +152,43 @@ void MQTT_response2(String receivedMessage) {
   }
 
 
-
-
-
   // 提取 fan_power 和 water_curtain_power
-  int fanPower = doc["content"]["fan_power"];
-  int waterCurtainPower = doc["content"]["water_curtain_power"];
-  // 剩余饲料量 = doc["content"]["remaining_feed"];存入全局变量中
-  // 如果提取到 fan_power 和 water_curtain_power执行风机水帘执行函数
+  int fanPower = doc["content"]["message"]["fan_power"];
+  int waterCurtainPower = doc["content"]["message"]["water_curtain_power"];
+  weight = -1;
+  if (doc["content"]["message"].containsKey("remaining_feed")) {
+    weight = doc["content"]["message"]["remaining_feed"];
+  }
+  Serial.println(fanPower);
+  Serial.println(waterCurtainPower);
+  Serial.println(weight);
+
+  if(fanPower>0||waterCurtainPower>40){
+  control(fanPower, waterCurtainPower);
+}
   
+
+
 
 }
 
-  // 风机水帘执行函数
-  // fanPower = constrain(fanPower, 0, 100);
-  // waterCurtainPower = constrain(waterCurtainPower, 0, 100);
-  // int power = round(fanPower * 255.0 / 100.0);
-  // int power2 = round(waterCurtainPower * 255.0 / 100.0);
+void control(int fanPower, int waterCurtainPower) {
 
-  // ledcWrite(FAN_PIN, power);  // 设置 PWM 占空比
-  // ledcWrite(PUMP_PIN, power2);  // 设置 PWM 占空比
 
-  // // 输出结果
-  // Serial.print("Fan Power: ");
-  // Serial.println(fanPower);
-  // Serial.print("Water Curtain Power: ");
-  // Serial.println(waterCurtainPower);
+  fanPower = constrain(fanPower, 40, 100);
+  waterCurtainPower = constrain(waterCurtainPower, 40, 100);
+  int power = round(fanPower * 255.0 / 100.0);
+  int power2 = round(waterCurtainPower * 255.0 / 100.0);
 
+  ledcWrite(FAN_PIN, power);  // 设置 PWM 占空比
+  ledcWrite(PUMP_PIN, power2);  // 设置 PWM 占空比
+
+  // 输出结果
+  Serial.print("Fan Power: ");
+  Serial.println(fanPower);
+  Serial.print("Water Curtain Power: ");
+  Serial.println(waterCurtainPower);
+}
 
 // MQTT 重新连接函数
 void reconnect() {
