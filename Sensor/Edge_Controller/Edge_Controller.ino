@@ -1,9 +1,9 @@
 // 定义LED和按钮的引脚
-const int ledPins[] = {2, 3, 4, 5};        // LED连接的GPIO引脚
-const int buttonPins[] = {6, 7, 8, 9};     // 按钮连接的GPIO引脚
+const int ledPins[] = {4, 16, 12, 14};        // LED连接的GPIO引脚
+const int buttonPins[] = {18, 19, 26, 25};     // 按钮连接的GPIO引脚
 
 // 状态控制变量
-int state = 0;  //云端接收值：不执行
+int state = 1;  //云端接收值：不执行
 int buttonPressed[4] = {0}; // 记录按钮按压状态
 int prevButtonStates[4] = {LOW}; // 按钮前一次状态记录，滤除抖动/长按
 int response = 0;  //返回云端值：未执行完成
