@@ -14,7 +14,7 @@ const int PULSE_DELAY = 80;       // 脉冲周期（微秒，控制电机转速�
 
 
 // WiFi 和 MQTT 连接信息
-const char* ssid = "SCU_Makers";
+const char* ssid = "Creator_Space";
 const char* password = "iloveSCU";
 const char* mqttServer = "ef861ca468.st1.iotda-device.cn-north-4.myhuaweicloud.com";
 const int mqttPort = 1883;
@@ -61,6 +61,24 @@ void MQTT_Init() {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
   client.setCallback(callback);
+}
+
+
+void get_s() {
+  JsonDocument responseDoc;
+  JsonArray services = responseDoc.createNestedArray("services");
+  JsonObject service = services.createNestedObject();
+  service["service_id"] = "stop";
+  JsonObject properties = service.createNestedObject("properties");
+  properties["state"] = 1;
+  String responseMessage;
+  serializeJson(responseDoc, responseMessage);
+  String responseTopic = post_properties;
+  if (client.publish(responseTopic.c_str(), responseMessage.c_str())) {
+    Serial.println("Response sent success");
+  } else {
+    Serial.println("Error sending response");
+  }
 }
 
 
@@ -151,23 +169,6 @@ void response_sf(JsonDocument doc,String requestId) {
   }
 
 
-
-void get_s() {
-  JsonDocument responseDoc;
-  JsonArray services = responseDoc.createNestedArray("services");
-  JsonObject service = services.createNestedObject();
-  service["service_id"] = "stop";
-  JsonObject properties = service.createNestedObject("properties");
-  properties["state"] = 1;
-  String responseMessage;
-  serializeJson(responseDoc, responseMessage);
-  String responseTopic = post_properties;
-  if (client.publish(responseTopic.c_str(), responseMessage.c_str())) {
-    Serial.println("Response sent success");
-  } else {
-    Serial.println("Error sending response");
-  }
-}
 
 
   JsonDocument responseDoc;

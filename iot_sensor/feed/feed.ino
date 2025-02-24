@@ -12,7 +12,7 @@
 
 
 // WiFi 和 MQTT 连接信息
-const char* ssid = "SCU_Makers";
+const char* ssid = "Creator_Space";
 const char* password = "iloveSCU";
 const char* mqttServer = "ef861ca468.st1.iotda-device.cn-north-4.myhuaweicloud.com";
 const int mqttPort = 1883;
@@ -93,7 +93,6 @@ void callback(char* topic, byte* message, unsigned int length) {
      Serial.println(error.f_str());
       return;
     }
-
 
   // 查询设备属性
   if (topicStr.startsWith(half_get_properties)) {

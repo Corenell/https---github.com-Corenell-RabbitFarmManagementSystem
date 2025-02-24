@@ -24,7 +24,7 @@ const int PWM_RESOLUTION2 = 8;  // PWM 分辨率（8 位，范围为 0-255）
 //SDA 21  SCL 22
 
 // WiFi 和 MQTT 连接信息
-const char* ssid = "SCU_Makers";
+const char* ssid = "Creator_Space";
 const char* password = "iloveSCU";
 const char* mqttServer = "ef861ca468.st1.iotda-device.cn-north-4.myhuaweicloud.com";
 const int mqttPort = 1883;
