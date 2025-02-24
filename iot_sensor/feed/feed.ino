@@ -30,10 +30,10 @@ int State = 0;
 float TARGET_WEIGHT = 0;  // 目标投喂量（克）
 const int FEEDING_SPEED = 2000;     // 输料舵机全速运转角度 1500-2000 顺
 const int STOP_ANGLE = 1500;         // 输料舵机停止角度
-const int DUMP_ANGLE = 1;        // 翻斗倾倒角度
-const int DUMP_ANGLE2 = 30;       //翻斗倾倒角度2
-const int RETURN_ANGLE = 120;        // 翻斗复位角度
-const int SETTLE_TIME = 10000;      // 料斗稳定时间(ms)
+const int DUMP_ANGLE = 20;        // 翻斗倾倒角度
+const int DUMP_ANGLE2 = 10;       //翻斗倾倒角度2
+const int RETURN_ANGLE = 1;        // 翻斗复位角度
+const int SETTLE_TIME = 2000;      // 料斗稳定时间(ms)
 
 enum SystemState { IDLE, FEEDING, DUMPING };
 SystemState currentState = IDLE;  //初始状态为闲置
