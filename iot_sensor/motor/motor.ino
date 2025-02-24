@@ -8,7 +8,7 @@ const int DIR_PIN = 17;  // 方向信号引脚（DIR）
 const int EN_PIN = 4;    //使能引脚
 
 // 参数定义
-const long PULSE_COUNT = 5000;  // 脉冲数量（控制电机旋转角度）
+const long PULSE_COUNT = 41000;  // 脉冲数量（控制电机旋转角度）
 const int PULSE_DELAY = 80;       // 脉冲周期（微秒，控制电机转速）
 //const int DELAY_BETWEEN_MOVES = 1000;  // 正反转之间的延时（毫秒#include <WiFi.h>         // 用于连接 WiFi
 

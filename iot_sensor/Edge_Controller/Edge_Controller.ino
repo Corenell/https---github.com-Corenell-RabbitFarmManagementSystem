@@ -11,21 +11,16 @@ int state = 0;  //云端接收值：不执行
 int buttonPressed[4] = {0}; // 记录按钮按压状态
 int prevButtonStates[4] = {LOW}; // 按钮前一次状态记录，滤除抖动/长按
 int response = 0;  //返回云端值：未执行完成
-// ssss
-/*
-void MQTT(){
-  //需要时，让state = 1
-}
-*/
+
 
 // WiFi 和 MQTT 连接信息
-const char* ssid = "SCU_Makers";
+const char* ssid = "Creator_Space";
 const char* password = "iloveSCU";
 const char* mqttServer = "ef861ca468.st1.iotda-device.cn-north-4.myhuaweicloud.com";
 const int mqttPort = 1883;
-const char* clientId = "67b683d83f28ab3d0384f27e_leds_0_0_2025022321";
+const char* clientId = "67b683d83f28ab3d0384f27e_leds_0_0_2025022411";
 const char* mqttUser = "67b683d83f28ab3d0384f27e_leds";
-const char* mqttPassword = "17a85498dc8339943237186c61e7aa2861be33405971bd0eab52d080f762ae92";
+const char* mqttPassword = "0b1ce8e1470edea7a7b3b1212847759bee669d6792b8de3e7efff3cf19a823a4";
 
 String half_get_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/request_id=");
 String half_response_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/response/request_id=");
@@ -106,10 +101,12 @@ void callback(char* topic, byte* message, unsigned int length) {
 
 
 void post_l(JsonDocument doc) {
-   int led = doc["content"]["led"];
-   if(led == 1){
-    state = 1;
-   }
+  int led1 = doc["content"]["led1"];
+  int led2 = doc["content"]["led2"];
+  int led3 = doc["content"]["led3"];
+  int led4 = doc["content"]["led4"];
+  int ledStates[4] = {led1, led2, led3, led4};  // 存储 LED 状态
+  illume(ledStates);
 }
 
 
@@ -132,18 +129,16 @@ void reconnect() {
   }
 }
 
-void illume(){
-  //云端指令为1时
-  if (state == 1) {
-    // 点亮所有LED
+void illume(int ledStates[]) {
+
     for (int i = 0; i < 4; i++) {
-      digitalWrite(ledPins[i], HIGH);
+      if (ledStates[i] == 1) {  // 这里修正了比较运算符
+       digitalWrite(ledPins[i], HIGH);
     }
-    
-    // 重置所有按钮状态
-    memset(buttonPressed, 0, sizeof(buttonPressed));
-    state = 2;  // 清除指令标记
   }
+  // 重置所有按钮状态
+  memset(buttonPressed, 0, sizeof(buttonPressed));
+  state = 2;  // 清除指令标记
 }
 
 void bottom(){
@@ -194,6 +189,8 @@ void get_l() {
 }
 
 void setup() {
+  Serial.begin(115200);//初始化串口
+  MQTT_Init();
   // 初始化LED引脚为输出模式
   for (int i = 0; i < 4; i++) {
     pinMode(ledPins[i], OUTPUT);
@@ -208,7 +205,11 @@ void setup() {
 
 
 void loop() {
-  illume();
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+  delay(1000);
   bottom();
   if(response==1){
     get_l();
