@@ -24,7 +24,7 @@ String half_get_properties = String("$oc/devices/") + mqttUser + String("/sys/pr
 String half_response_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/response/request_id=");
 String get_messages = String("$oc/devices/") + mqttUser + String("/sys/messages/down");
 String post_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/report");
-
+// ssxxs
 // 系统参数
 int State = 0;
 float TARGET_WEIGHT = 0;  // 目标投喂量（克）

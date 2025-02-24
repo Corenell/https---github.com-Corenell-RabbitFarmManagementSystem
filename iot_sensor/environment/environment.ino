@@ -8,7 +8,7 @@
 #define MQ135D 25       //定义光敏传感器数字输出引脚
 #define MQ135A 34       //定义光敏传感器模拟输出引脚
 
-
+// ssss
 //I2C接线// 引脚定义
 const int FAN_PIN = 13;  // 风扇连接的 PWM 引脚
 const int PUMP_PIN = 12;  // 风扇连接的 PWM 引脚

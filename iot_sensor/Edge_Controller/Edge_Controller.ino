@@ -11,7 +11,7 @@ int state = 0;  //云端接收值：不执行
 int buttonPressed[4] = {0}; // 记录按钮按压状态
 int prevButtonStates[4] = {LOW}; // 按钮前一次状态记录，滤除抖动/长按
 int response = 0;  //返回云端值：未执行完成
-
+// ssss
 /*
 void MQTT(){
   //需要时，让state = 1
