@@ -156,7 +156,7 @@ void post_fw(JsonDocument doc) {
 void control(int fanPower, int waterCurtainPower) {
 
 
-  fanPower = constrain(fanPower, 0, 100);
+  fanPower = constrain(fanPower, 20, 100);
   waterCurtainPower = constrain(waterCurtainPower, 40, 100);
   int power = round(fanPower * 255.0 / 100.0);
   int power2 = round(waterCurtainPower * 255.0 / 100.0);
