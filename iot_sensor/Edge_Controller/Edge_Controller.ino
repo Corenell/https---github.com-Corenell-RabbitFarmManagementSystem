@@ -12,7 +12,6 @@ int buttonPressed[4] = {0}; // 记录按钮按压状态
 int prevButtonStates[4] = {LOW}; // 按钮前一次状态记录，滤除抖动/长按
 int response = 0;  //返回云端值：未执行完成
 
-
 // WiFi 和 MQTT 连接信息
 const char* ssid = "Creator_Space";
 const char* password = "iloveSCU";
@@ -21,15 +20,14 @@ const int mqttPort = 1883;
 const char* clientId = "67b683d83f28ab3d0384f27e_leds_0_0_2025022411";
 const char* mqttUser = "67b683d83f28ab3d0384f27e_leds";
 const char* mqttPassword = "0b1ce8e1470edea7a7b3b1212847759bee669d6792b8de3e7efff3cf19a823a4";
-
 String half_get_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/request_id=");
 String half_response_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/response/request_id=");
 String get_messages = String("$oc/devices/") + mqttUser + String("/sys/messages/down");
 String post_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/report");
 
+
 WiFiClient espClient;
 PubSubClient client(espClient);
-
 
 void MQTT_Init() {
   Serial.println("Booting");
@@ -60,6 +58,7 @@ void MQTT_Init() {
 
 }
 
+// 接收iot信息并执行相应的函数
 void callback(char* topic, byte* message, unsigned int length) {
   Serial.print("topic: ");
   Serial.println(topic);
@@ -83,7 +82,6 @@ void callback(char* topic, byte* message, unsigned int length) {
   // 查询设备属性
   if (topicStr.startsWith(half_get_properties)) {
     String requestId = topicStr.substring(half_get_properties.length());
-    
     String type = doc["service_id"];
     if(type == "get_tha"){
       // get_tha(requestId);
@@ -109,8 +107,8 @@ void post_l(JsonDocument doc) {
   illume(ledStates);
 }
 
-
 // MQTT 重新连接函数
+// 重新连接mqtt
 void reconnect() {
   int attempt = 0;
   while (!client.connected()) {
@@ -121,13 +119,9 @@ void reconnect() {
       Serial.printf("Failed to reconnect, state: %d. Retrying...\n", client.state());
       delay(6000);
     }
-    // 添加超时机制
-    if (attempt > 30) {
-      Serial.println("Reconnect timeout, restarting...");
-      ESP.restart();
-    }
   }
 }
+
 
 void illume(int ledStates[]) {
 
@@ -209,7 +203,6 @@ void loop() {
     reconnect();
   }
   client.loop();
-  delay(1000);
   bottom();
   if(response==1){
     get_l();

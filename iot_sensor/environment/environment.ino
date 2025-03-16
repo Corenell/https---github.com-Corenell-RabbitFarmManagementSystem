@@ -4,11 +4,11 @@
 #include <PubSubClient.h> // 用于 MQTT 连接和通信
 #include <ArduinoJson.h>  // 用于构造 JSON 报文
 
-
+// 光敏传感器引脚
 #define MQ135D 25       //定义光敏传感器数字输出引脚
 #define MQ135A 34       //定义光敏传感器模拟输出引脚
 
-// ssss
+
 //I2C接线// 引脚定义
 const int FAN_PIN = 13;  // 风扇连接的 PWM 引脚
 const int PUMP_PIN = 12;  // 风扇连接的 PWM 引脚
@@ -31,16 +31,17 @@ const int mqttPort = 1883;
 const char* clientId = "67b683d83f28ab3d0384f27e_environment_0_0_2025022306";
 const char* mqttUser = "67b683d83f28ab3d0384f27e_environment";
 const char* mqttPassword = "17a85498dc8339943237186c61e7aa2861be33405971bd0eab52d080f762ae92";
-
 String half_get_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/request_id=");
 String half_response_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/response/request_id=");
 String get_messages = String("$oc/devices/") + mqttUser + String("/sys/messages/down");
 
+// 初始化参数
 BMP280 bmp280;
 Adafruit_AHTX0 aht;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+// 连接wifi和mqtt
 void MQTT_Init() {
   Serial.println("Booting");
   WiFi.mode(WIFI_STA);
@@ -66,10 +67,8 @@ void MQTT_Init() {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
   client.setCallback(callback);
-
-
 }
-
+// 接收mqtt信息并且调用相应的函数
 void callback(char* topic, byte* message, unsigned int length) {
   Serial.print("topic: ");
   Serial.println(topic);
@@ -88,12 +87,9 @@ void callback(char* topic, byte* message, unsigned int length) {
      Serial.println(error.f_str());
       return;
     }
-
-
   // 查询设备属性
   if (topicStr.startsWith(half_get_properties)) {
     String requestId = topicStr.substring(half_get_properties.length());
-    
     String type = doc["service_id"];
     if(type == "get_tha"){
       get_tha(requestId);
@@ -106,10 +102,10 @@ void callback(char* topic, byte* message, unsigned int length) {
     if(type == "post_fw"){
        post_fw(doc);
     }
-  
   }
 }
 
+// 获取温湿度氨气浓度并且发送至云平台
 void get_tha(String requestId) {
   //uint32_t pressure = bmp280.getPressure();  //BMP280填充气压
   sensors_event_t humidity, temp;  //AHT20填充温湿度
@@ -122,7 +118,6 @@ void get_tha(String requestId) {
   Serial.print("湿度: "); Serial.print(humiread); Serial.println("%");
   //Serial.print("气压: "); Serial.print(pressure/1000); Serial.println("KPa");
   Serial.print("氨气浓度: ");Serial.println(NH3Value);//串口打印模拟信号0-4095
-
 
   // 构造 JSON 响应
   JsonDocument responseDoc;
@@ -141,7 +136,7 @@ void get_tha(String requestId) {
   }
 }
 
-
+接收风机水帘参数调控
 void post_fw(JsonDocument doc) {
   int fanPower = doc["content"]["fan_power"];
   int waterCurtainPower = doc["content"]["water_curtain_power"];
@@ -171,7 +166,9 @@ void control(int fanPower, int waterCurtainPower) {
   Serial.println(waterCurtainPower);
 }
 
+// MQTT 断连重新连接
 // MQTT 重新连接函数
+// 重新连接mqtt
 void reconnect() {
   int attempt = 0;
   while (!client.connected()) {
@@ -181,11 +178,6 @@ void reconnect() {
     } else {
       Serial.printf("Failed to reconnect, state: %d. Retrying...\n", client.state());
       delay(6000);
-    }
-    // 添加超时机制
-    if (attempt > 30) {
-      Serial.println("Reconnect timeout, restarting...");
-      ESP.restart();
     }
   }
 }
@@ -197,9 +189,7 @@ void setup() {
   pinMode(MQ135D, INPUT);//定义GPIO15为输入模式
   pinMode(MQ135A, INPUT);//定义GPIO34为输入模式
   Wire.begin(); 
-
   bmp280.begin();  //初始化BMP280
-
   ledcAttach(FAN_PIN, PWM_FREQ, PWM_RESOLUTION); 
   ledcAttach(PUMP_PIN, PWM_FREQ2, PWM_RESOLUTION2); 
   //Aht20初始化
@@ -208,11 +198,9 @@ void setup() {
     delay(500);
   }
   Serial.println("AHT20 found");
-
 }
 
 void loop() {
-
     if (!client.connected()) {
     reconnect();
   }

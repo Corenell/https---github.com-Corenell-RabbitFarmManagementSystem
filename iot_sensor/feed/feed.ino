@@ -24,7 +24,7 @@ String half_get_properties = String("$oc/devices/") + mqttUser + String("/sys/pr
 String half_response_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/response/request_id=");
 String get_messages = String("$oc/devices/") + mqttUser + String("/sys/messages/down");
 String post_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/report");
-// ssxxs
+
 // 系统参数
 int State = 0;
 float TARGET_WEIGHT = 0;  // 目标投喂量（克）
@@ -35,6 +35,7 @@ const int DUMP_ANGLE2 = 140;       //翻斗倾倒角度2
 const int RETURN_ANGLE = 180;        // 翻斗复位角度
 const int SETTLE_TIME = 2000;      // 料斗稳定时间(ms)
 
+// 初始化参数
 enum SystemState { IDLE, FEEDING, DUMPING };
 SystemState currentState = IDLE;  //初始状态为闲置
 unsigned long actionStartTime = 0;
@@ -44,7 +45,7 @@ HX711 scale;  //HX711
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-
+// 连接wifi和mqtt
 void MQTT_Init() {
   Serial.println("Booting");
   WiFi.mode(WIFI_STA);
@@ -73,8 +74,7 @@ void MQTT_Init() {
 }
 
 
-// 根据华为云传来的数据调用不同函数
-
+// 接收mqtt信息并且调用相应的函数
 void callback(char* topic, byte* message, unsigned int length) {
   Serial.print("topic: ");
   Serial.println(topic);
@@ -112,6 +112,22 @@ void callback(char* topic, byte* message, unsigned int length) {
   
   }
 }
+
+// 重新连接mqtt
+void reconnect() {
+  int attempt = 0;
+  while (!client.connected()) {
+    Serial.printf("Attempt %d: Reconnecting to MQTT...\n", ++attempt);
+    if (client.connect(clientId, mqttUser, mqttPassword)) {
+      Serial.println("Reconnected to MQTT");
+    } else {
+      Serial.printf("Failed to reconnect, state: %d. Retrying...\n", client.state());
+      delay(6000);
+    }
+  }
+}
+
+
 // 接收华为云传来的预期投喂量，修改state为1
 void post_w(JsonDocument  doc) {
   TARGET_WEIGHT = doc["content"]["weight"];
@@ -120,7 +136,7 @@ void post_w(JsonDocument  doc) {
   }
 }
 
-// 投喂完成函数，给esp32小车发送开始运动指令
+// 投喂完成，给esp32小车发送开始运动指令
 void get_w() {
   JsonDocument responseDoc;
   JsonArray services = responseDoc.createNestedArray("services");
@@ -138,18 +154,6 @@ void get_w() {
   }
 }
 
-void reconnect() {
-  int attempt = 0;
-  while (!client.connected()) {
-    Serial.printf("Attempt %d: Reconnecting to MQTT...\n", ++attempt);
-    if (client.connect(clientId, mqttUser, mqttPassword)) {
-      Serial.println("Reconnected to MQTT");
-    } else {
-      Serial.printf("Failed to reconnect, state: %d. Retrying...\n", client.state());
-      delay(6000);
-    }
-  }
-}
 
 // 移动平均滤波（称重稳定性较好，暂时关闭滤波）
 float filteredWeight() {
@@ -168,12 +172,9 @@ float filteredWeight() {
   return num;
 }
 
-// 如果state为1，则执行一次饲料投喂指令，修改state=o，调用MQTT_response2函数
+// 如果state为1，则执行一次饲料投喂指令，然后修改state=0，调用get_w函数让小车继续运动
 void feed(){
-
   float currentWeight = filteredWeight();  //获取当前料斗上的饲料重量
-
-
   switch(currentState) {
     case IDLE:  //闲置
       if(currentWeight <= TARGET_WEIGHT) {  //是否达到目标量
@@ -243,7 +244,6 @@ void feed(){
       break;
     }
   }
-  
   // 调试输出
   static unsigned long lastPrint = 0;  //上次输出时刻
   if(millis() - lastPrint > 1000) {  //间隔1s
@@ -259,10 +259,9 @@ void feed(){
     Serial.println("g");
     lastPrint = millis();  //更新输出时刻
   }
-  
 
 }
-  
+
 void setup() {
   Serial.begin(115200);
   MQTT_Init();
@@ -293,23 +292,4 @@ void loop() {
   if(State == 1){
     feed();
   }
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
