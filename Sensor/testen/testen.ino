@@ -38,7 +38,7 @@ void setup() {
 
 void loop() {
   int power1 = 250;
-  int power2 = 120;
+  int power2 = 255;
   ledcWrite(FAN_PIN, power1);  // 设置 PWM 占空比
   ledcWrite(PUMP_PIN, power2);
 
