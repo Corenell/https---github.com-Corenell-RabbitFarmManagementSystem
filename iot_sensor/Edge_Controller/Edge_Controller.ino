@@ -99,7 +99,7 @@ void callback(char* topic, byte* message, unsigned int length) {
   }
 }
 
-
+// 接收亮灯指令执行亮灯函数
 void post_l(JsonDocument doc) {
   int led1 = doc["content"]["led1"];
   int led2 = doc["content"]["led2"];
@@ -129,6 +129,7 @@ void reconnect() {
   }
 }
 
+// 亮灯函数
 void illume(int ledStates[]) {
 
     for (int i = 0; i < 4; i++) {
@@ -209,7 +210,7 @@ void loop() {
     reconnect();
   }
   client.loop();
-  delay(1000);
+
   bottom();
   if(response==1){
     get_l();

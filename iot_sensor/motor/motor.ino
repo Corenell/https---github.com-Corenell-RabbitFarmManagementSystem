@@ -21,9 +21,6 @@ const int mqttPort = 1883;
 const char* clientId = "67b683d83f28ab3d0384f27e_motor_0_0_2025022306";
 const char* mqttUser = "67b683d83f28ab3d0384f27e_motor";
 const char* mqttPassword = "17a85498dc8339943237186c61e7aa2861be33405971bd0eab52d080f762ae92";
-
-
-// ssss
 String half_get_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/request_id=");
 String half_response_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/response/request_id=");
 String half_get_command = String("$oc/devices/") + mqttUser + String("/sys/commands/request_id=");
@@ -32,7 +29,7 @@ String get_messages = String("$oc/devices/") + mqttUser + String("/sys/messages/
 String post_properties = String("$oc/devices/") + mqttUser + String("/properties/report");
 
 
-
+// 初始化
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -62,25 +59,6 @@ void MQTT_Init() {
   Serial.println(WiFi.localIP());
   client.setCallback(callback);
 }
-
-
-void get_s() {
-  JsonDocument responseDoc;
-  JsonArray services = responseDoc.createNestedArray("services");
-  JsonObject service = services.createNestedObject();
-  service["service_id"] = "stop";
-  JsonObject properties = service.createNestedObject("properties");
-  properties["state"] = 1;
-  String responseMessage;
-  serializeJson(responseDoc, responseMessage);
-  String responseTopic = post_properties;
-  if (client.publish(responseTopic.c_str(), responseMessage.c_str())) {
-    Serial.println("Response sent success");
-  } else {
-    Serial.println("Error sending response");
-  }
-}
-
 
 
 void callback(char* topic, byte* message, unsigned int length) {
@@ -131,59 +109,6 @@ void callback(char* topic, byte* message, unsigned int length) {
   }
 }
 
-//接收开始投喂指令
-void post_f(JsonDocument doc) {
-
-  int feed = doc["content"]["feed"];
-  if(feed == 1){
-    Moving();
-  }
-}
-
-void Moving(){
-  // 正转（远离电机）
-  digitalWrite(DIR_PIN, HIGH);  // 设置方向为正转
-  generatePulses(PULSE_COUNT, PULSE_DELAY);  // 生成脉冲
-  Serial.println("move");
-  get_s();
-  // 上云传函数
-}
-void generatePulses(long pulseCount, int pulseDelay) {
-  for (long i = 0; i < pulseCount; i++) {
-    digitalWrite(PUL_PIN, HIGH);  // 发送 HIGH 脉冲
-    delayMicroseconds(pulseDelay);  // 延时
-    digitalWrite(PUL_PIN, LOW);  // 发送 LOW 脉冲
-    delayMicroseconds(pulseDelay);  // 延时
-
-  }
-}
-
-
-
-
-
-void response_sf(JsonDocument doc,String requestId) {
-  int feed = doc["paras"]["feed"];
-  if(feed == 1){
-    Moving();
-  }
-
-
-
-
-  JsonDocument responseDoc;
-  responseDoc["state"] = 1;
-  String responseMessage;
-  serializeJson(responseDoc, responseMessage);
-  String responseTopic = half_response_command + requestId;
-  if (client.publish(responseTopic.c_str(), responseMessage.c_str())) {
-    Serial.println("Response sent success");
-  } else {
-    Serial.println("Error sending response");
-  }
-}
-
-
 // MQTT 重新连接函数
 void reconnect() {
   int attempt = 0;
@@ -203,6 +128,70 @@ void reconnect() {
   }
 }
 
+// 接收feed_esp32传来的运动命令，然后开始运动，然后反馈
+void get_s() {
+  JsonDocument responseDoc;
+  JsonArray services = responseDoc.createNestedArray("services");
+  JsonObject service = services.createNestedObject();
+  service["service_id"] = "stop";
+  JsonObject properties = service.createNestedObject("properties");
+  properties["state"] = 1;
+  String responseMessage;
+  serializeJson(responseDoc, responseMessage);
+  String responseTopic = post_properties;
+  if (client.publish(responseTopic.c_str(), responseMessage.c_str())) {
+    Serial.println("Response sent success");
+  } else {
+    Serial.println("Error sending response");
+  }
+}
+
+
+//接收开始投喂指令，然后开始运动
+void post_f(JsonDocument doc) {
+  int feed = doc["content"]["feed"];
+  if(feed == 1){
+    Moving();
+  }
+}
+
+void Moving(){
+  // 正转（远离电机）
+  digitalWrite(DIR_PIN, HIGH);  // 设置方向为正转
+  generatePulses(PULSE_COUNT, PULSE_DELAY);  // 生成脉冲
+  Serial.println("move");
+  get_s();
+  // 上云传函数
+}
+
+void generatePulses(long pulseCount, int pulseDelay) {
+  for (long i = 0; i < pulseCount; i++) {
+    digitalWrite(PUL_PIN, HIGH);  // 发送 HIGH 脉冲
+    delayMicroseconds(pulseDelay);  // 延时
+    digitalWrite(PUL_PIN, LOW);  // 发送 LOW 脉冲
+    delayMicroseconds(pulseDelay);  // 延时
+
+  }
+}
+
+// 接收iot运动命令，并且运动一段距离，然后反馈
+void response_sf(JsonDocument doc,String requestId) {
+  int feed = doc["paras"]["feed"];
+  if(feed == 1){
+    Moving();
+  }
+
+  JsonDocument responseDoc;
+  responseDoc["state"] = 1;
+  String responseMessage;
+  serializeJson(responseDoc, responseMessage);
+  String responseTopic = half_response_command + requestId;
+  if (client.publish(responseTopic.c_str(), responseMessage.c_str())) {
+    Serial.println("Response sent success");
+  } else {
+    Serial.println("Error sending response");
+  }
+}
 
 void setup() {
   Serial.begin(115200);//初始化串口
@@ -218,6 +207,7 @@ void loop() {
   if (!client.connected()) {
   reconnect();
   }
+
   client.loop();
 }
 
