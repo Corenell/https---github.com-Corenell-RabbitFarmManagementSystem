@@ -154,7 +154,10 @@ void post_l(JsonDocument doc) {
     } else if (ledStates[i] == 4) {
       color(led[i][0], led[i][1], led[i][2], 255, 255, 0); // 黄色示例
       Serial.printf("%d ok", ledStates[i]);
-    }
+    } else if (ledStates[i] == 0) {
+      color(led[i][0], led[i][1], led[i][2], 0, 0, 0); // 无色示例
+      Serial.printf("%d ok", ledStates[i]);
+  }
   }
   // 重置按钮状态，进入按钮上报阶段
   memset(buttonPressed, 0, sizeof(buttonPressed));

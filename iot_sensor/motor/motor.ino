@@ -26,7 +26,7 @@ String half_response_properties = String("$oc/devices/") + mqttUser + String("/s
 String half_get_command = String("$oc/devices/") + mqttUser + String("/sys/commands/request_id=");
 String half_response_command = String("$oc/devices/") + mqttUser + String("/sys/commands/response/request_id=");
 String get_messages = String("$oc/devices/") + mqttUser + String("/sys/messages/down");
-String post_properties = String("$oc/devices/") + mqttUser + String("/properties/report");
+String post_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/report");
 
 
 // 初始化
@@ -128,24 +128,22 @@ void reconnect() {
   }
 }
 
-// 接收feed_esp32传来的运动命令，然后开始运动，然后反馈
+// 接收feed_esp32传来的运动命令，然后开始运动，然后反馈拍照
 void get_s() {
-  JsonDocument responseDoc;
+  DynamicJsonDocument responseDoc(256);
   JsonArray services = responseDoc.createNestedArray("services");
   JsonObject service = services.createNestedObject();
   service["service_id"] = "stop";
   JsonObject properties = service.createNestedObject("properties");
-  properties["state"] = 1;
+  properties["camstate"] = 1;
   String responseMessage;
   serializeJson(responseDoc, responseMessage);
-  String responseTopic = post_properties;
-  if (client.publish(responseTopic.c_str(), responseMessage.c_str())) {
-    Serial.println("Response sent success");
+  if (client.publish(post_properties.c_str(), responseMessage.c_str())) {
+    Serial.println("Response sent success111");
   } else {
     Serial.println("Error sending response");
   }
 }
-
 
 //接收开始投喂指令，然后开始运动
 void post_f(JsonDocument doc) {
@@ -182,7 +180,7 @@ void response_sf(JsonDocument doc,String requestId) {
   }
 
   JsonDocument responseDoc;
-  responseDoc["state"] = 1;
+  responseDoc["camstate"] = 1;
   String responseMessage;
   serializeJson(responseDoc, responseMessage);
   String responseTopic = half_response_command + requestId;

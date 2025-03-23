@@ -136,14 +136,14 @@ void get_tha(String requestId) {
   }
 }
 
-接收风机水帘参数调控
+// 接收风机水帘参数调控
 void post_fw(JsonDocument doc) {
   int fanPower = doc["content"]["fan_power"];
   int waterCurtainPower = doc["content"]["water_curtain_power"];
   Serial.println(fanPower);
   Serial.println(waterCurtainPower);
 
-  if(fanPower>0||waterCurtainPower>40){
+  if(fanPower>40||waterCurtainPower>40){
   control(fanPower, waterCurtainPower);
   }
 }
@@ -151,8 +151,8 @@ void post_fw(JsonDocument doc) {
 void control(int fanPower, int waterCurtainPower) {
 
 
-  fanPower = constrain(fanPower, 20, 100);
-  waterCurtainPower = constrain(waterCurtainPower, 40, 100);
+  fanPower = constrain(fanPower, 0, 100);
+  waterCurtainPower = constrain(waterCurtainPower, 0, 100);
   int power = round(fanPower * 255.0 / 100.0);
   int power2 = round(waterCurtainPower * 255.0 / 100.0);
 
