@@ -1,7 +1,6 @@
-#include <PubSubClient.h>
 #include <WiFi.h>         // 用于连接 WiFiWROOM#include <PubSubClient.h> // 用于 MQTT 连接和通信
 #include <ArduinoJson.h>  // 用于构造 JSON 报文
-
+#include <Pubsubclient.h>
 
 // 定义引脚
 int led[4][3] = {
@@ -134,22 +133,12 @@ void color(int redPin, int greenPin, int bluePin, int redValue, int greenValue, 
 
 // 接收亮灯指令后执行亮灯函数
 void post_l(JsonDocument doc) {
-  // 定义并初始化数组，默认值为 9
-  int ledStates[4] = {9, 9, 9, 9};
-
-  // 检查 JsonDocument 中是否存在对应的键，并更新 ledStates 数组
-  if (doc["content"]["led1"].is<int>()) {
-    ledStates[0] = doc["content"]["led1"];
-  }
-  if (doc["content"]["led2"].is<int>()) {
-    ledStates[1] = doc["content"]["led2"];
-  }
-  if (doc["content"]["led3"].is<int>()) {
-    ledStates[2] = doc["content"]["led3"];
-  }
-  if (doc["content"]["led4"].is<int>()) {
-    ledStates[3] = doc["content"]["led4"];
-  }
+  int ledStates[4] = {
+    doc["content"]["led1"],
+    doc["content"]["led2"],
+    doc["content"]["led3"],
+    doc["content"]["led4"]
+  }; // 存储 LED 状态
 
   for (int i = 0; i < 4; i++) {
     // 根据不同状态控制 LED 颜色，可按需求修改颜色值

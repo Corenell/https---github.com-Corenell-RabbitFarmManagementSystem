@@ -33,7 +33,7 @@ void loop()  // run over and over again
      
 void color (unsigned char red, unsigned char green, unsigned char blue)  //颜色控制函数 （这里是共阳，我们后面是共阴，这个函数后面直接用r/g/b，不用225减）
 {    
-          analogWrite(Red1, 255-red);   
-          analogWrite(Green1, 255-blue); 
-          analogWrite(Blue1, 255-green); 
+          analogWrite(Red1, red);   
+          analogWrite(Green1, blue); 
+          analogWrite(Blue1, green); 
 }

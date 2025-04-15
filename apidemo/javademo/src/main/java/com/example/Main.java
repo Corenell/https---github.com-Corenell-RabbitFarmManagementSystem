@@ -91,7 +91,7 @@ public class Main {
         OkHttpClient client = new OkHttpClient();
         
         // 请求 URL
-        String url = "https://ef861ca468.st1.iotda-app.cn-north-4.myhuaweicloud.com:443/v5/iot/b3318d2e70ab4740b267ed8955fd7275/devices/67b683d83f28ab3d0384f27e_rabbit/properties?service_id=67b683d83f28ab3d0384f27e_rabbit";
+        String url = "https://ef861ca468.st1.iotda-app.cn-north-4.myhuaweicloud.com:443/v5/iot/b3318d2e70ab4740b267ed8955fd7275/devices/67b683d83f28ab3d0384f27e_environment/properties?service_id=get_tha";
         
         
         // 构造 get 请求
@@ -125,9 +125,9 @@ public class Main {
         OkHttpClient client = new OkHttpClient();
         
         // post URL
-        String url = "https://ef861ca468.st1.iotda-app.cn-north-4.myhuaweicloud.com:443/v5/iot/b3318d2e70ab4740b267ed8955fd7275/devices/67b683d83f28ab3d0384f27e_rabbit/messages";
+        String url = "https://ef861ca468.st1.iotda-app.cn-north-4.myhuaweicloud.com:443/v5/iot/b3318d2e70ab4740b267ed8955fd7275/devices/67b683d83f28ab3d0384f27e_environment/messages";
         
-        // 构造 JSON 格式的请求数据
+
         String jsonPayload = "{\n"
         + "  \"message\": {\n"
         + "    \"pwm\": 50,\n"
@@ -143,7 +143,7 @@ public class Main {
                 .url(url)
                 .post(body)
                 .addHeader("Content-Type", "application/json") 
-                .addHeader("X-Auth-Token", token)  // 这里传递 fetchAuthToken() 方法获取的 token
+                .addHeader("X-Auth-Token", token)  
                 .build();
 
         Response response = null;
