@@ -144,12 +144,9 @@ void post_fw(JsonDocument doc) {
   Serial.println(waterCurtainPower);
 
   control(fanPower, waterCurtainPower);
-  
 }
 
 void control(int fanPower, int waterCurtainPower) {
-
-
   fanPower = constrain(fanPower, 0, 100);
   waterCurtainPower = constrain(waterCurtainPower, 0, 100);
   int power = round(fanPower * 255.0 / 100.0);
