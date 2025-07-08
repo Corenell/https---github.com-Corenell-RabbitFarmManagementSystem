@@ -16,9 +16,10 @@
 // h, s, v：HSV颜色空间参数，h色调(0~360度)，s饱和度(0~1)，v亮度(0~1)
 // color_1：颜色识别结果ID，0=无色/环境，1=红，2=绿，3=蓝
 
+//积分时间和增益系数设置
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(
   TCS34725_INTEGRATIONTIME_154MS,
-  TCS34725_GAIN_16X);
+  TCS34725_GAIN_16X); 
 
 // 补偿系数（测得标准色板的rgb，将其对应颜色补偿至240左右的比例系数）
 const float R_COMP = 1.25;
@@ -30,7 +31,7 @@ const float hRed   = 344.0;
 const float hGreen = 163.5;
 const float hBlue  = 202.0;
 
-int color_1 = 0;
+int color_1 = 0;  //初始
 
 // 判断是否在容差范围内（支持跨0度处理）（默认5%容差）
 bool withinTolerance(float base, float val, float tolerancePercent = 5.0) {
@@ -127,12 +128,15 @@ void loop() {
   uint8_t r_std, g_std, b_std;
   float h, s, v;
 
-  readRawRGB(r_raw, g_raw, b_raw, c_raw);
-  applyCompensation(r_corr, g_corr, b_corr, r_raw, g_raw, b_raw);
-  normalizeRGB(r_std, g_std, b_std, r_corr, g_corr, b_corr, c_raw);
-  rgbToHSV(r_std, g_std, b_std, h, s, v);
+  readRawRGB(r_raw, g_raw, b_raw, c_raw); //读取原始值
+  applyCompensation(r_corr, g_corr, b_corr, r_raw, g_raw, b_raw); //应用补偿系数
+  normalizeRGB(r_std, g_std, b_std, r_corr, g_corr, b_corr, c_raw); //标准化rgb
+  rgbToHSV(r_std, g_std, b_std, h, s, v); //rgb映射hsv
 
-  color_1 = detectColor(h, s, v, r_std, g_std, b_std);
+  color_1 = detectColor(h, s, v, r_std, g_std, b_std); //判定颜色
+
+  Serial.print("识别颜色 ID: ");
+  Serial.println(color_1);
 
   //调试输出
   Serial.print("原始 RGBC: ");
@@ -150,9 +154,6 @@ void loop() {
   Serial.print(h, 1); Serial.print(" S=");
   Serial.print(s * 100, 1); Serial.print("% V=");
   Serial.print(v * 100, 1); Serial.println("%");
-
-  Serial.print("识别颜色 ID: ");
-  Serial.println(color_1);
 
   Serial.println("----------");
   //delay(100);
