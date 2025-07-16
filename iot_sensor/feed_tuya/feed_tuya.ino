@@ -4,22 +4,41 @@
 #include <SHA256.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>  // 用于构造 JSON 报文
+#include <ESP32Servo.h>
+#include "HX711.h"
+#include "soc/rtc.h"
 
 #define SHA256HMAC_SIZE 32
-
-
-
 
 unsigned long lastReport = 0;
 const unsigned long reportInterval = 5000;//上报延时5s
 
+// 硬件引脚定义
+#define LOADCELL_DOUT_PIN 17
+#define LOADCELL_SCK_PIN  16
+#define CALIBRATION_FACTOR 719 //校准因子
 
+// 系统参数
+int State = 0;
+float TARGET_WEIGHT = 0;  // 目标投喂量（克）
+const int FEEDING_SPEED = 2000;     // 输料舵机全速运转角度 1500-2000 顺
+const int STOP_ANGLE = 1500;         // 输料舵机停止角度
+const int DUMP_ANGLE = 160;        // 翻斗倾倒角度
+const int DUMP_ANGLE2 = 140;       //翻斗倾倒角度2
+const int RETURN_ANGLE = 180;        // 翻斗复位角度
+const int SETTLE_TIME = 2000;      // 料斗稳定时间(ms)
 
-
+// 初始化参数
+enum SystemState { IDLE, FEEDING, DUMPING };
+SystemState currentState = IDLE;  //初始状态为闲置
+unsigned long actionStartTime = 0;
+Servo servo360;  // 输料舵机（360°连续旋转）
+Servo servo180;  // 翻斗舵机（180°标准）
+HX711 scale;  //HX711
 
 // WiFi credentials
-const char *wifi_ssid = "zeyun";             // Replace with your WiFi name
-const char *wifi_password = "11235813";   // Replace with your WiFi password
+const char *wifi_ssid = "Money";             // Replace with your WiFi name
+const char *wifi_password = "050506qdd";   // Replace with your WiFi password
 
 // MQTT Broker settings
 const int mqtt_port = 8883;  // MQTT port (TLS)
@@ -34,9 +53,9 @@ const long gmt_offset_sec = 0;            // GMT offset in seconds (adjust for y
 const int daylight_offset_sec = 0;        // Daylight saving time offset in seconds
 
 //productId、deviceId、deviceSecret是涂鸦平台获取到授权码信息
-const char productId[] = "mbhsuwztnujxfy1s";
-const char deviceId[] = "26ef7df505aeb2487fapyv";
-const char deviceSecret[] = "UlANftUAXW1kmPOp";
+const char productId[] = "g5yjslqwdzfb81pw";
+const char deviceId[] = "26c4ef8f3b04520df9vuiw";
+const char deviceSecret[] = "jL5SEEBRjk6wyhA4";
 
 char clientID[50] ;
 char username[100];
@@ -219,91 +238,150 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
 // 只更新收到的字段
     bool updated = false;
 
-    if (data.containsKey("fan_power")) {
-      currentFanPower = constrain((int)data["fan_power"], 0, 100);
-      Serial.printf("设置风机功率: %d%%\n", currentFanPower);
-      updated = true;
-    }
-
-    if (data.containsKey("water_curtain_power")) {
-      currentWaterCurtainPower = constrain((int)data["water_curtain_power"], 0, 100);
-      Serial.printf("设置水帘功率: %d%%\n", currentWaterCurtainPower);
+    if (data.containsKey("weight")) {
+      TARGET_WEIGHT = data["weight"];
+      Serial.printf("收到饲料量: %d\n", TARGET_WEIGHT);
       updated = true;
     }
 
     if (updated) {
-      control(currentFanPower, currentWaterCurtainPower);
+      State = 1;
     }
   }
 }
 
-void control(int currentFanPower, int currentWaterCurtainPower) {
-  currentFanPower = constrain(currentFanPower, 0, 100);
-  currentWaterCurtainPower = constrain(currentWaterCurtainPower, 0, 100);
-  int power = round(currentFanPower * 255.0 / 100.0);
-  int power2 = round(currentWaterCurtainPower * 255.0 / 100.0);
 
-  ledcWrite(FAN_PIN, power);  // 设置 PWM 占空比
-  ledcWrite(PUMP_PIN, power2);  // 设置 PWM 占空比
 
-  // 输出结果
-  Serial.print("Fan Power: ");
-  Serial.println(power);
-  Serial.print("Water Curtain Power: ");
-  Serial.println(power2);
+// 移动平均滤波（称重稳定性较好，暂时关闭滤波）
+float filteredWeight() {
+  /*
+  static float buffer[5];
+  static byte index = 0;
+  
+  buffer[index] = scale.get_units();
+  index = (index + 1) % 5;
+  
+  float sum = 0;
+  for(byte i=0; i<5; i++) sum += buffer[i];
+  return sum / 5;
+  */
+  float num = scale.get_units();
+  return num;
 }
 
+// 如果state为1，则执行一次饲料投喂指令，然后修改state=0，调用get_w函数让小车继续运动
+void feed(){
+  float currentWeight = filteredWeight();  //获取当前料斗上的饲料重量
+  switch(currentState) {
+    case IDLE:  //闲置
+      if(currentWeight <= TARGET_WEIGHT) {  //是否达到目标量
+        currentState = FEEDING;  //切换为FEEDING状态
+        servo360.writeMicroseconds(FEEDING_SPEED);  // 启动输料
+        Serial.println("开始输料...");
+      }
+      break;
 
-void reportProperty(float temperature, float humidity, float NH3Value) {
-  long timestamp = time(nullptr);  // UNIX时间戳
-  char topic[64];
-  snprintf(topic, sizeof(topic), "tylink/%s/thing/property/report", deviceId);
+    case FEEDING:  //喂料
+      if(currentWeight >= TARGET_WEIGHT) {  //是否达到目标量
+        servo360.writeMicroseconds(STOP_ANGLE);  // 停止输料
+        currentState = DUMPING;  //切换为倒料状态
+        actionStartTime = millis();     // 记录饲料称重完成的时刻
+        Serial.println("达到目标重量，准备倾倒");
+      }
+      break;
 
-  // 生成消息体
-  char payload[256];
-  snprintf(payload, sizeof(payload),
-    "{"
-      "\"msgId\":\"45lkj3551234002\","
-      "\"time\":%ld,"
-      "\"data\":{"
-        "\"temperature\":{\"value\":%.2f,\"time\":%ld},"
-        "\"humidity\":{\"value\":%.2f,\"time\":%ld},"
-        "\"ammonia\":{\"value\":%.2f,\"time\":%ld}"
-      "}"
-    "}",
-    timestamp,
-    temperature, timestamp,
-    humidity, timestamp,
-    NH3Value, timestamp
-    );
+    case DUMPING: {  //倾倒
+      static uint8_t phase = 0;  //初始状态0
+      unsigned long elapsed = millis() - actionStartTime;  //计算动作时刻到目前的时间差
 
-  mqtt_client.publish(topic, payload);
-  Serial.print("Published topic: ");
-  Serial.println(topic);
-  Serial.print("Payload: ");
-  Serial.println(payload);
+      switch(phase) {
+        case 0: //执行倾倒
+          if(elapsed > SETTLE_TIME) {  //时间差大于稳定间隔
+            servo180.write(DUMP_ANGLE);  //倾倒
+            actionStartTime = millis();  //更新倾倒时刻
+            phase = 1;  
+          }
+          break;
+          
+        case 1: // 抖动倾倒
+          if(elapsed > 1000) {  //时间差大于稳定间隔
+            servo180.write(DUMP_ANGLE2);  //90度位
+            actionStartTime = millis();  //更新抖动时刻
+            phase = 2;
+          }
+          break;
+          
+        case 2: // 再次倾倒
+          if(elapsed > 1000) {  //时间差大于稳定间隔
+            servo180.write(DUMP_ANGLE);  //再次倾倒
+            actionStartTime = millis();  //更新倾倒时刻
+            phase = 3;
+          }
+          break;
+
+        case 3: // 保持倾倒
+          if(elapsed > 3000) {  //时间差大于稳定间隔
+            servo180.write(RETURN_ANGLE); //料斗复位
+            actionStartTime = millis();  //更新动作时间
+            phase = 4;
+          }
+          break;
+          
+        case 4: // 复位完成
+          if(elapsed > 2000) {  //时间差大于稳定间隔
+            scale.tare();  //称 清零
+            currentState = IDLE;  //切换为闲置状态
+            phase = 0;  //切换状态0
+            Serial.println("完成投喂循环");
+            State = 0;  //完成投喂
+            //get_w();
+          }
+          break;
+      }
+      break;
+    }
+  }
+  // 调试输出
+  static unsigned long lastPrint = 0;  //上次输出时刻
+  if(millis() - lastPrint > 1000) {  //间隔1s
+    Serial.print("当前状态: ");
+    Serial.print(State);
+    Serial.print(" | 流程: ");
+    Serial.print(currentState);
+    Serial.print(" | 重量: ");
+    Serial.print(currentWeight);
+    Serial.println("g");
+    Serial.print("目标重量: ");
+    Serial.print(TARGET_WEIGHT);
+    Serial.println("g");
+    lastPrint = millis();  //更新输出时刻
+  }
+
 }
 
 void setup() {
   Serial.begin(115200);//初始化串口
-  Serial.println("AHT20");
   connectToWiFi();
     syncTime();  // X.509 validation requires synchronization time
     mqtt_client.setServer(mqtt_broker, mqtt_port);
     mqtt_client.setCallback(mqttCallback);
     connectToMQTT();
-  Wire.begin(); 
-  bmp280.begin();  //初始化BMP280
-  pinMode(MQ135D, INPUT);//定义GPIO15为输入模式
-  pinMode(MQ135A, INPUT);//定义GPIO34为输入模式
-  ledcAttach(FAN_PIN, PWM_FREQ, PWM_RESOLUTION); 
-  ledcAttach(PUMP_PIN, PWM_FREQ2, PWM_RESOLUTION2); 
-  //Aht20初始化
-  while(!aht.begin()){
-    Serial.println("Aht20 initial error!");
-    delay(500);
-  }
-  Serial.println("AHT20 found");
+
+  Serial.println("正在初始化");
+  setCpuFrequencyMhz(80);  //HX711需要esp32工作在80MHz
+
+  // 初始化舵机
+  servo360.attach(25);  // 输料螺杆舵机（连续旋转）
+  servo180.attach(26);  // 翻斗舵机
+  servo360.write(STOP_ANGLE);  // 初始停止状态1500
+  servo180.write(RETURN_ANGLE);  //初始水平状态120
+  Serial.println("Servo Ready!");
+
+  // 初始化称重模块
+  scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+  scale.set_scale(CALIBRATION_FACTOR);  //设置校准因子
+  scale.tare();  //称 清零
+  Serial.println("HX711 Ready!");
 }
 
 void loop() {
@@ -312,28 +390,10 @@ void loop() {
     }
   mqtt_client.loop();
 
-  unsigned long now = millis();
-  if (now - lastReport >= reportInterval) {
-    lastReport = now;
-
-    // 读取传感器数据并上报
-    sensors_event_t humidity, temp;
-    aht.getEvent(&humidity, &temp);
-    float tempread = temp.temperature;
-    float humiread = humidity.relative_humidity;
-    float NH3Value = analogRead(MQ135A);
-
-    Serial.print("Temperature: ");
-    Serial.print(tempread);
-    Serial.print(" °C, Humidity: ");
-    Serial.print(humiread);
-    Serial.print(" %, ammonia: ");
-    Serial.println(NH3Value);
-
-    reportProperty(tempread, humiread, NH3Value);
-  }
-
-  delay(500);  // 每0.5s轮询一次
+  if(State == 1){
+    feed();
+  }  
+  //delay(500);  // 每0.5s轮询一次
   
 }
 
