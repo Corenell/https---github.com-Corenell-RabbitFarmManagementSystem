@@ -291,9 +291,11 @@ void bottom() {
     if (currentState == HIGH && prevButtonStates[i] == LOW) { // 检测到新按下动作
       if (buttonPressed[i] == 0) {
         // 关闭对应 LED（全关）
-        color(led[i][0], led[i][1], led[i][2], 0, 0, 0);
+        ledStates[i] = 0;  // 同步逻辑状态
+        //color(led[i][0], led[i][1], led[i][2], 0, 0, 0);
         buttonPressed[i] = 1;
         publishNeeded = true;
+        control();
       }
     }
     prevButtonStates[i] = currentState;
