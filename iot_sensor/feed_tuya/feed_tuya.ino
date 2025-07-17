@@ -7,6 +7,7 @@
 #include <ESP32Servo.h>
 #include "HX711.h"
 #include "soc/rtc.h"
+#include <HTTPClient.h>
 
 #define SHA256HMAC_SIZE 32
 
@@ -334,7 +335,7 @@ void feed(){
             phase = 0;  //切换状态0
             Serial.println("完成投喂循环");
             State = 0;  //完成投喂
-            //get_w();
+            report(); //上报后端
           }
           break;
       }
@@ -357,6 +358,41 @@ void feed(){
     lastPrint = millis();  //更新输出时刻
   }
 
+}
+
+// 上报后端
+void report() {
+    // 构造 JSON
+    DynamicJsonDocument responseDoc(256);
+    JsonArray services = responseDoc.createNestedArray("services");
+    JsonObject service = services.createNestedObject();
+    service["service_id"] = "feed";
+    JsonObject properties = service.createNestedObject("properties");
+    properties["state"] = 1;
+
+    // 序列化 JSON
+    String responseMessage;
+    serializeJson(responseDoc, responseMessage);
+
+    // HTTP 发送
+    HTTPClient http;
+    String url = "http://<服务器地址>/api/report"; // 接口
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+
+    int httpCode = http.POST(responseMessage); // 发送 JSON
+    if (httpCode > 0) {
+        Serial.print("HTTP Response code: ");
+        Serial.println(httpCode);
+        String payload = http.getString();
+        Serial.print("HTTP Response payload: ");
+        Serial.println(payload);
+    } else {
+        Serial.print("HTTP Error code: ");
+        Serial.println(httpCode);
+    }
+
+    http.end(); // 释放资源
 }
 
 void setup() {
