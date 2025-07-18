@@ -54,6 +54,7 @@ char password[96] ;
 WiFiClientSecure espClient;
 PubSubClient mqtt_client(espClient);
 
+QueueHandle_t httpQueue;
 
 // SSL certificate for MQTT broker
 static const char ca_cert[]
@@ -276,7 +277,7 @@ void control() {
     }
   }
 
-  memset(buttonPressed, 0, sizeof(buttonPressed));
+  //memset(buttonPressed, 0, sizeof(buttonPressed));
   state = 2;
 }
 
@@ -306,14 +307,28 @@ void bottom() {
 
   // 如果有新的按下事件且距离上次上报超过500ms，则上报按钮状态
   if (publishNeeded && (millis() - lastPublishTime > 500)) {
-    report(buttonPressed);
+    xQueueSend(httpQueue, buttonPressed, portMAX_DELAY);
+    //report(buttonPressed);
     lastPublishTime = millis();
   }
  
   // 如果全部按钮均已上报熄灭，则退出按钮监测阶段
   if (allPressed) {
     state = 0;
+    // 上报最后一次全灭状态
+    xQueueSend(httpQueue, buttonPressed, portMAX_DELAY);
+    memset(buttonPressed, 0, sizeof(buttonPressed));  // 清空按压记录
     Serial.println("所有按钮均按下，退出按钮检测");
+  }
+}
+
+//http上报任务工作在核心0
+void httpTask(void *pvParameters) {
+  int btnState[4];
+  for (;;) {
+    if (xQueueReceive(httpQueue, &btnState, portMAX_DELAY) == pdTRUE) {
+      report(btnState);
+    }
   }
 }
 
@@ -342,6 +357,7 @@ void report(int buttonPressed[4]) {
     HTTPClient http;
     String url = "http://<服务器地址>/api/report"; //填写实际 HTTP 接口
     http.begin(url);
+    http.setTimeout(5000);  // 设置超时时间，单位毫秒
     http.addHeader("Content-Type", "application/json");
 
     int httpCode = http.POST(responseMessage); // 发送 JSON
@@ -368,17 +384,21 @@ void setup() {
     mqtt_client.setServer(mqtt_broker, mqtt_port);
     mqtt_client.setCallback(mqttCallback);
     connectToMQTT();
-// 设置 RGB LED 的引脚为输出模式
+   // 设置 RGB LED 的引脚为输出模式
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 3; j++) {
      pinMode(led[i][j], OUTPUT);
       Serial.printf("%d ", led[i][j]);  // 使用 Serial.printf 输出 LED 引脚号
       }
   }
-for (int i = 0; i < 4; i++) {
-  pinMode(buttonPins[i], INPUT);
-}
-Serial.println("response");
+  for (int i = 0; i < 4; i++) {
+    pinMode(buttonPins[i], INPUT);
+  }
+  Serial.println("response");
+  httpQueue = xQueueCreate(6, sizeof(int[4]));
+
+  xTaskCreatePinnedToCore(
+  httpTask, "HTTP Task", 8192, NULL, 1, NULL, 0);//创建核心0任务
 
 }
 
