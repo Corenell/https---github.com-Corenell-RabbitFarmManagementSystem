@@ -376,7 +376,7 @@ void report() {
 
     // HTTP 发送
     HTTPClient http;
-    String url = "http://<服务器地址>/api/report"; // 接口
+    String url = "http://116.63.168.84:9090/rabbit/touwei_done_tuya"; // 接口
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
 
