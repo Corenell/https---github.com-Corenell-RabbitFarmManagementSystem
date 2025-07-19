@@ -255,7 +255,7 @@ void control() {
   for (int i = 0; i < 4; i++) {
     switch (ledStates[i]) {
       case 1:
-        color(led[i][0], led[i][1], led[i][2], 255, 0, 0); // 蓝色
+        color(led[i][0], led[i][1], led[i][2], 255, 0, 0); // 蓝色(b、g、r)
         Serial.printf("LED%d: 蓝色\n", i + 1);
         break;
       case 2:
@@ -268,6 +268,22 @@ void control() {
         break;
       case 4:
         color(led[i][0], led[i][1], led[i][2], 255, 255, 0); // 青色
+        Serial.printf("LED%d: 青色\n", i + 1);
+        break;
+      case 5:
+        color(led[i][0], led[i][1], led[i][2], 0, 50, 255); // 黄色
+        Serial.printf("LED%d: 青色\n", i + 1);
+        break;
+      case 6:
+        color(led[i][0], led[i][1], led[i][2], 80, 0, 255); // 紫色
+        Serial.printf("LED%d: 青色\n", i + 1);
+        break;
+      case 7:
+        color(led[i][0], led[i][1], led[i][2], 0, 18, 255); // 橙色
+        Serial.printf("LED%d: 青色\n", i + 1);
+        break;
+      case 8:
+        color(led[i][0], led[i][1], led[i][2], 40, 10, 150); // 粉色
         Serial.printf("LED%d: 青色\n", i + 1);
         break;
       default:
@@ -355,9 +371,9 @@ void report(int buttonPressed[4]) {
 
     // HTTP 发送
     HTTPClient http;
-    String url = "http://<服务器地址>/api/report"; //填写实际 HTTP 接口
+    String url = "http://116.63.168.84:9090/rabbit/led_off_tuya"; //后端
     http.begin(url);
-    http.setTimeout(5000);  // 设置超时时间，单位毫秒
+    http.setTimeout(5000);  // 设置超时时间5s
     http.addHeader("Content-Type", "application/json");
 
     int httpCode = http.POST(responseMessage); // 发送 JSON
