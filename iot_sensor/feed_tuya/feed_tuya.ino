@@ -24,8 +24,8 @@ int State = 0;
 float TARGET_WEIGHT = 0;  // 目标投喂量（克）
 const int FEEDING_SPEED = 2000;     // 输料舵机全速运转角度 1500-2000 顺
 const int STOP_ANGLE = 1500;         // 输料舵机停止角度
-const int DUMP_ANGLE = 160;        // 翻斗倾倒角度
-const int DUMP_ANGLE2 = 140;       //翻斗倾倒角度2
+const int DUMP_ANGLE = 140;        // 翻斗倾倒角度
+const int DUMP_ANGLE2 = 120;       //翻斗倾倒角度2
 const int RETURN_ANGLE = 180;        // 翻斗复位角度
 const int SETTLE_TIME = 2000;      // 料斗稳定时间(ms)
 
@@ -38,8 +38,8 @@ Servo servo180;  // 翻斗舵机（180°标准）
 HX711 scale;  //HX711
 
 // WiFi credentials
-const char *wifi_ssid = "Money";             // Replace with your WiFi name
-const char *wifi_password = "050506qdd";   // Replace with your WiFi password
+const char *wifi_ssid = "Creator_Space";             // Replace with your WiFi name
+const char *wifi_password = "iloveSCU";   // Replace with your WiFi password
 
 // MQTT Broker settings
 const int mqtt_port = 8883;  // MQTT port (TLS)
@@ -305,7 +305,7 @@ void feed(){
           break;
           
         case 1: // 抖动倾倒
-          if(elapsed > 1000) {  //时间差大于稳定间隔
+          if(elapsed > 500) {  //时间差大于稳定间隔
             servo180.write(DUMP_ANGLE2);  //90度位
             actionStartTime = millis();  //更新抖动时刻
             phase = 2;
@@ -313,7 +313,7 @@ void feed(){
           break;
           
         case 2: // 再次倾倒
-          if(elapsed > 1000) {  //时间差大于稳定间隔
+          if(elapsed > 500) {  //时间差大于稳定间隔
             servo180.write(DUMP_ANGLE);  //再次倾倒
             actionStartTime = millis();  //更新倾倒时刻
             phase = 3;

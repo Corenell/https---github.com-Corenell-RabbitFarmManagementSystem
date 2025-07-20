@@ -34,8 +34,8 @@ int currentFanPower = 0;              // 记录当前风机功率
 int currentWaterCurtainPower = 0;    // 记录当前水帘功率
 
 // WiFi credentials
-const char *wifi_ssid = "Money";             // Replace with your WiFi name
-const char *wifi_password = "050506qdd";   // Replace with your WiFi password
+const char *wifi_ssid = "Creator_Space";             // Replace with your WiFi name
+const char *wifi_password = "iloveSCU";   // Replace with your WiFi password
 
 // MQTT Broker settings
 const int mqtt_port = 8883;  // MQTT port (TLS)

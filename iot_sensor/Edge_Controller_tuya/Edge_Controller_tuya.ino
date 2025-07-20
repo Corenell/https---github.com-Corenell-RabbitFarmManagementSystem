@@ -27,8 +27,8 @@ int prevButtonStates[4] = {LOW, LOW, LOW, LOW}; // 按钮前一次状态，用�
 int ledStates[4] = {0, 0, 0, 0};
 
 // WiFi credentials
-const char *wifi_ssid = "zeyun";             // Replace with your WiFi name
-const char *wifi_password = "11235813";   // Replace with your WiFi password
+const char *wifi_ssid = "Creator_Space";             // Replace with your WiFi name
+const char *wifi_password = "iloveSCU";   // Replace with your WiFi password
 
 // MQTT Broker settings
 const int mqtt_port = 8883;  // MQTT port (TLS)
