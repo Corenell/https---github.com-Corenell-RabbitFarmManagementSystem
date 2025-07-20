@@ -20,8 +20,8 @@ const int PULSE_DELAY = 80;       // 脉冲周期（微秒，控制电机转速�
 int feedState = 0; //定义小车指令状态
 
 // WiFi credentials
-const char *wifi_ssid = "Money";             // Replace with your WiFi name
-const char *wifi_password = "050506qdd";   // Replace with your WiFi password
+const char *wifi_ssid = "Creator_Space";             // Replace with your WiFi name
+const char *wifi_password = "iloveSCU";   // Replace with your WiFi password
 
 // MQTT Broker settings
 const int mqtt_port = 8883;  // MQTT port (TLS)
@@ -248,7 +248,7 @@ void Moving(){
 
 void Back(){
   // 反转（远离电机）
-  digitalWrite(DIR_PIN, LOW);  // 设置方向为正转
+  digitalWrite(DIR_PIN, LOW);  // 设置方向为反转
   generatePulses(PULSE_COUNT2, PULSE_DELAY);  // 生成脉冲
   Serial.println("back");
 }
