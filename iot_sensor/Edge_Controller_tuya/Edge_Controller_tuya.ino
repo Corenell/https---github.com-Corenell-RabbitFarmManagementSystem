@@ -332,9 +332,9 @@ void bottom() {
   // 如果全部按钮均已上报熄灭，则退出按钮监测阶段
   if (allPressed) {
     state = 0;
-    // 上报最后一次全灭状态
-    control(); // 确保所有灯都熄灭
-    xQueueSend(httpQueue, buttonPressed, portMAX_DELAY);
+    
+    control();  // 强制所有灯都熄灭
+    xQueueSend(httpQueue, buttonPressed, portMAX_DELAY);  // 强制上报一次全灭状态
     memset(buttonPressed, 0, sizeof(buttonPressed));  // 清空按压记录
     Serial.println("所有按钮均按下，退出按钮检测");
   }
