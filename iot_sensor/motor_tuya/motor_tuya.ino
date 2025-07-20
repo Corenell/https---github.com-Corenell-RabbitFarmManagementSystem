@@ -15,6 +15,7 @@ const int EN_PIN = 4;    //使能引脚
 // 参数定义
 const long PULSE_COUNT = 41000;  // 脉冲数量（控制电机旋转角度）
 const long PULSE_COUNT2 = 41500;  // 倒退脉冲数量（控制电机旋转角度）
+const long PULSE_COUNT3 = 123500;  // 倒退脉冲数量（控制电机旋转角度）
 const int PULSE_DELAY = 80;       // 脉冲周期（微秒，控制电机转速）
 //const int DELAY_BETWEEN_MOVES = 1000;  // 正反转之间的延时（毫秒）
 int feedState = 0; //定义小车指令状态
@@ -234,6 +235,9 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
       if(feedState == 2){
         Back();
       }
+      if(feedState == 3){
+        Back_Full();
+      }
     }
   }
 }
@@ -250,6 +254,13 @@ void Back(){
   // 反转（远离电机）
   digitalWrite(DIR_PIN, LOW);  // 设置方向为反转
   generatePulses(PULSE_COUNT2, PULSE_DELAY);  // 生成脉冲
+  Serial.println("back");
+}
+
+void Back_Full(){
+  // 反转（远离电机）
+  digitalWrite(DIR_PIN, LOW);  // 设置方向为反转
+  generatePulses(PULSE_COUNT3, PULSE_DELAY);  // 生成脉冲
   Serial.println("back");
 }
 

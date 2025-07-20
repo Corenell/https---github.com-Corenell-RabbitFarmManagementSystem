@@ -316,6 +316,7 @@ void bottom() {
       }
     }
     prevButtonStates[i] = currentState;
+
     if (buttonPressed[i] == 0) { // 只要有任一灯未熄灭，则allPressed为0
       allPressed = 0;
     }
@@ -332,6 +333,7 @@ void bottom() {
   if (allPressed) {
     state = 0;
     // 上报最后一次全灭状态
+    control(); // 确保所有灯都熄灭
     xQueueSend(httpQueue, buttonPressed, portMAX_DELAY);
     memset(buttonPressed, 0, sizeof(buttonPressed));  // 清空按压记录
     Serial.println("所有按钮均按下，退出按钮检测");
