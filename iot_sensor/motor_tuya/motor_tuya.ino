@@ -15,14 +15,14 @@ const int EN_PIN = 4;    //使能引脚
 // 参数定义
 const long PULSE_COUNT = 41000;  // 脉冲数量（控制电机旋转角度）
 const long PULSE_COUNT2 = 41500;  // 倒退脉冲数量（控制电机旋转角度）
-const long PULSE_COUNT3 = 123500;  // 倒退脉冲数量（控制电机旋转角度）
+const long PULSE_COUNT3 = 123000;  // 倒退脉冲数量（控制电机旋转角度）
 const int PULSE_DELAY = 80;       // 脉冲周期（微秒，控制电机转速）
 //const int DELAY_BETWEEN_MOVES = 1000;  // 正反转之间的延时（毫秒）
 int feedState = 0; //定义小车指令状态
 
 // WiFi credentials
-const char *wifi_ssid = "Creator_Space";             // Replace with your WiFi name
-const char *wifi_password = "iloveSCU";   // Replace with your WiFi password
+const char *wifi_ssid = "assumeengage";             // Replace with your WiFi name
+const char *wifi_password = "060801Xsk";   // Replace with your WiFi password
 
 // MQTT Broker settings
 const int mqtt_port = 8883;  // MQTT port (TLS)
@@ -289,7 +289,7 @@ void report() {
 
     // HTTP 发送
     HTTPClient http;
-    String url = "http://<服务器地址>/api/report"; // URL
+    String url = "http://192.168.1.198:5000/"; // URL
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
 
