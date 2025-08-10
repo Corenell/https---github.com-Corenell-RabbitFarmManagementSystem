@@ -239,6 +239,9 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
     }
 
     if (updated) {
+      if(feedState == 0){
+        Stay();
+      }
       if(feedState == 1){
         Moving();
       }
@@ -250,6 +253,11 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
       }
     }
   }
+}
+
+void Stay(){
+  Serial.println("stay");
+  report(); // 上报atlas拍照
 }
 
 void Moving(){
