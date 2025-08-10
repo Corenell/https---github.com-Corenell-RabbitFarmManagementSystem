@@ -20,6 +20,8 @@ const int PULSE_DELAY = 80;       // 脉冲周期（微秒，控制电机转速�
 //const int DELAY_BETWEEN_MOVES = 1000;  // 正反转之间的延时（毫秒）
 int feedState = 0; //定义小车指令状态
 
+String lastMsgId = "";
+
 // WiFi credentials
 const char *wifi_ssid = "assumeengage";             // Replace with your WiFi name
 const char *wifi_password = "060801Xsk";   // Replace with your WiFi password
@@ -218,6 +220,14 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
       Serial.println(err.c_str());
       return;
     }
+
+    String msgId = doc["msgId"] | "";
+    if (msgId == lastMsgId) {
+        Serial.println("重复消息，忽略");
+        return;
+    }
+    lastMsgId = msgId;
+
     JsonObject data = doc["data"];
 // 只更新收到的字段
     bool updated = false;
