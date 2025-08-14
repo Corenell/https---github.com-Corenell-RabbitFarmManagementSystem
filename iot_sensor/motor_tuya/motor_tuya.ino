@@ -314,13 +314,11 @@ void report() {
     int httpCode = http.POST(responseMessage); // 发送 JSON
     if (httpCode > 0) {
         Serial.print("HTTP Response code: ");
-        Serial.println(httpCode);
         String payload = http.getString();
         Serial.print("HTTP Response payload: ");
         Serial.println(payload);
     } else {
         Serial.print("HTTP Error code: ");
-        Serial.println(httpCode);
     }
 
     http.end(); // 释放资源

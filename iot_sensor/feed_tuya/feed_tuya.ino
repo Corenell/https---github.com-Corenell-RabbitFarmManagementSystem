@@ -38,8 +38,8 @@ Servo servo180;  // 翻斗舵机（180°标准）
 HX711 scale;  //HX711
 
 // WiFi credentials
-const char *wifi_ssid = "Creator_Space";             // Replace with your WiFi name
-const char *wifi_password = "iloveSCU";   // Replace with your WiFi password
+const char *wifi_ssid = "XSKASSUME";             // Replace with your WiFi name
+const char *wifi_password = "060801Xsk";   // Replace with your WiFi password
 
 // MQTT Broker settings
 const int mqtt_port = 8883;  // MQTT port (TLS)
