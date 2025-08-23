@@ -23,8 +23,8 @@ int feedState = 0; //定义小车指令状态
 String lastMsgId = "";
 
 // WiFi credentials
-const char *wifi_ssid = "assumeengage";             // Replace with your WiFi name
-const char *wifi_password = "060801Xsk";   // Replace with your WiFi password
+const char *wifi_ssid = "tuyaiot";             // Replace with your WiFi name
+const char *wifi_password = "87654321";   // Replace with your WiFi password
 
 // MQTT Broker settings
 const int mqtt_port = 8883;  // MQTT port (TLS)
@@ -307,7 +307,7 @@ void report() {
 
     // HTTP 发送
     HTTPClient http;
-    String url = "http://192.168.1.198:5000/"; // URL
+    String url = "http://192.168.1.199:5000/"; // URL
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
 
