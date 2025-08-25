@@ -21,6 +21,9 @@ const int mqttPort = 1883;
 const char* clientId = "67b683d83f28ab3d0384f27e_motor_0_0_2025022306";
 const char* mqttUser = "67b683d83f28ab3d0384f27e_motor";
 const char* mqttPassword = "17a85498dc8339943237186c61e7aa2861be33405971bd0eab52d080f762ae92";
+
+
+
 String half_get_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/request_id=");
 String half_response_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/response/request_id=");
 String half_get_command = String("$oc/devices/") + mqttUser + String("/sys/commands/request_id=");
@@ -149,7 +152,8 @@ void get_s() {
 void post_f(JsonDocument doc) {
   int feed = doc["content"]["feed"];
   if(feed == 1){
-    Moving();
+    // Moving();
+    get_s();
   }
 }
 

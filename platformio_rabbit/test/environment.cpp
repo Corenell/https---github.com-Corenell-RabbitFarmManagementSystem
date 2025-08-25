@@ -23,9 +23,15 @@ const int PWM_RESOLUTION2 = 8;  // PWM 分辨率（8 位，范围为 0-255）
 //const int PWM_CHANNEL2 = 1;  // PWM 通道（ESP32 有 16 个通道，0-15）
 //SDA 21  SCL 22
 
+// ===== 函数声明 =====
+void callback(char* topic, byte* payload, unsigned int length);
+void get_tha(String requestId);
+void post_fw(JsonDocument doc);
+void control(int fanPower, int waterCurtainPower);
+
 // WiFi 和 MQTT 连接信息
-const char* ssid = "Creator_Space";
-const char* password = "iloveSCU";
+const char* ssid = "chenyu";
+const char* password = "cy383245";
 const char* mqttServer = "ef861ca468.st1.iotda-device.cn-north-4.myhuaweicloud.com";
 const int mqttPort = 1883;
 const char* clientId = "67b683d83f28ab3d0384f27e_environment_0_0_2025022306";

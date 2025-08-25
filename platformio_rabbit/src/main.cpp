@@ -1,26 +1,271 @@
-#include <Arduino.h>
-// å®å®šä¹‰ GPIO è¾“å‡ºå¼•è„š
-#define LED_PIN 12
+#include <WiFi.h>         // ÓÃÓÚÁ¬½Ó WiFiWROOM#include <PubSubClient.h> // ÓÃÓÚ MQTT Á¬½ÓºÍÍ¨ĞÅ
+#include <ArduinoJson.h>  // ÓÃÓÚ¹¹Ôì JSON ±¨ÎÄ
+#include <Pubsubclient.h>
+
+// ¶¨ÒåÒı½Å
+int led[4][3] = {
+  {22, 23, 13},
+  {18, 19, 21},
+  {12, 27, 26},
+  {4, 16, 17}
+}; // LEDÒı½Å
+
+const int buttonPins[] = {39,34,36,35}; // °´Å¥Á¬½ÓµÄGPIOÒı½Å
+
+// ×´Ì¬¿ØÖÆ±äÁ¿
+int state = 0;                    // ÔÆ¶Ë½ÓÊÕÖµ£º0-¿ÕÏĞ£¬2-µÈ´ı°´Å¥²Ù×÷
+int buttonPressed[4] = {0, 0, 0, 0};      // ¼ÇÂ¼°´Å¥ÊÇ·ñÒÑÉÏ±¨£¨0:Î´ÉÏ±¨/ÁÁ, 1:ÒÑÉÏ±¨/Ãğ£©
+int prevButtonStates[4] = {LOW, LOW, LOW, LOW}; // °´Å¥Ç°Ò»´Î×´Ì¬£¬ÓÃÓÚÂË³ı¶¶¶¯/³¤°´
+
+// È«¾Ö±äÁ¿£¬±£´æ LED ×´Ì¬
+int ledStates[4] = {0, 0, 0, 0};  
+
+// WiFi ºÍ MQTT Á¬½ÓĞÅÏ¢
+const char *ssid = "chenyu";
+const char *password = "cy383245";
+const char *mqttServer = "ef861ca468.st1.iotda-device.cn-north-4.myhuaweicloud.com";
+const int mqttPort = 1883;
+const char *clientId = "67b683d83f28ab3d0384f27e_leds_0_0_2025022411";
+const char *mqttUser = "67b683d83f28ab3d0384f27e_leds";
+const char *mqttPassword = "0b1ce8e1470edea7a7b3b1212847759bee669d6792b8de3e7efff3cf19a823a4";
+
+String half_get_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/request_id=");
+String half_response_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/get/response/request_id=");
+String get_messages = String("$oc/devices/") + mqttUser + String("/sys/messages/down");
+String post_properties = String("$oc/devices/") + mqttUser + String("/sys/properties/report");
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+// Îª±ÜÃâÖØ¸´·¢²¼£¬ÉèÖÃÉÏ´Î·¢²¼µÄÊ±¼ä£¨µ¥Î»£ººÁÃë£©
+unsigned long lastPublishTime = 0;
+
+// º¯ÊıÉùÃ÷
+void callback(char *topic, byte *message, unsigned int length);
+void MQTT_Init();
+void post_l(JsonDocument doc);
+void bottom();
+void get_l(int buttonPressed[4]);
+void reconnect();
+
+// ³õÊ¼»¯ MQTT Á¬½Ó
+void MQTT_Init() {
+  Serial.println("Booting");
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(3000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to the WiFi network");
+  
+  client.setServer(mqttServer, mqttPort);
+  client.setKeepAlive(60);
+  client.setCallback(callback);
+  
+  while (!client.connected()) {
+    Serial.println("Connecting to MQTT...");
+    if (client.connect(clientId, mqttUser, mqttPassword)) {
+      Serial.println("Connected to MQTT");
+    } else {
+      Serial.print("Failed to connect, state: ");
+      Serial.println(client.state());
+      delay(6000);
+    }
+  }
+  Serial.println("Ready");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
+// MQTT ÏûÏ¢»Øµ÷º¯Êı
+void callback(char *topic, byte *message, unsigned int length) {
+  Serial.print("topic: ");
+  Serial.println(topic);
+  String topicStr = String(topic);
+
+  String receivedMessage = "";
+  for (unsigned int i = 0; i < length; i++) {
+    receivedMessage += (char)message[i];
+  }
+  Serial.print("message: ");
+  Serial.println(receivedMessage);
+  
+  // Îª JSON ½âÎö·ÖÅä×ã¹»µÄ»º³åÇø
+  DynamicJsonDocument doc(512);
+  DeserializationError error = deserializeJson(doc, receivedMessage);
+  if (error) {
+    Serial.print("Failed to parse JSON: ");
+    Serial.println(error.f_str());
+    return;
+  }
+
+  // ÏÂ·¢Éè±¸ÏûÏ¢£ºÊÕµ½ IoT ÏÂ·¢µÄÁÁµÆÖ¸Áî
+  if (topicStr == get_messages) {
+    String type = doc["content"]["type"];
+          Serial.println("ok0");
+    if (type == "post_l") {
+      post_l(doc);
+      Serial.println("ok1");
+    }
+  }
+}
+
+// MQTT ÖØĞÂÁ¬½Óº¯Êı£¨ÒÆ³ıÁË³¬Ê±ÖØÆôÂß¼­£¬¸ÄÎª³ÖĞø³¢ÊÔ£©
+void reconnect() {
+  if (client.connected()) return; // ÒÑÁ¬½ÓÔòÖ±½Ó·µ»Ø
+
+  Serial.println("MQTT disconnected, attempting reconnect...");
+  while (!client.connected()) {
+    if (client.connect(clientId, mqttUser, mqttPassword)) {
+      Serial.println("Reconnected to MQTT");
+    } else {
+      Serial.print("Reconnect failed, state: ");
+      Serial.println(client.state());
+      delay(6000);
+    }
+  }
+}
+
+// ¿ØÖÆ LED ÑÕÉ«º¯Êı
+void color(int redPin, int greenPin, int bluePin, int redValue, int greenValue, int blueValue) {
+  analogWrite(redPin, redValue);
+  analogWrite(greenPin, greenValue);
+  analogWrite(bluePin, blueValue);
+}
+
+// ½ÓÊÕÁÁµÆÖ¸ÁîºóÖ´ĞĞÁÁµÆº¯Êı
+void post_l(JsonDocument doc) {
+  JsonObject content = doc["content"];
+
+  // Èç¹û JSON ÖĞÓĞ¶ÔÓ¦µÄ¼ü£¬²Å¸üĞÂ£¬·ñÔò±£³ÖÖ®Ç°µÄÖµ
+  if (content.containsKey("led1")) {
+    ledStates[0] = content["led1"].as<int>();
+  }
+  if (content.containsKey("led2")) {
+    ledStates[1] = content["led2"].as<int>();
+  }
+  if (content.containsKey("led3")) {
+    ledStates[2] = content["led3"].as<int>();
+  }
+  if (content.containsKey("led4")) {
+    ledStates[3] = content["led4"].as<int>();
+  }
+
+
+for (int i = 0; i < 4; i++) {
+  // ¸ù¾İ²»Í¬×´Ì¬¿ØÖÆ LED ÑÕÉ«
+  if (ledStates[i] == 1) {
+    color(led[i][0], led[i][1], led[i][2], 255, 0, 0); // ºìÉ«
+  } else if (ledStates[i] == 2) {
+    color(led[i][0], led[i][1], led[i][2], 0, 255, 0); // ÂÌÉ«
+  } else if (ledStates[i] == 3) {
+    color(led[i][0], led[i][1], led[i][2], 0, 0, 255); // À¶É«
+  } else if (ledStates[i] == 4) {
+    color(led[i][0], led[i][1], led[i][2], 255, 255, 0); // »ÆÉ«
+  } else if (ledStates[i] == 5) {
+    color(led[i][0], led[i][1], led[i][2], 0, 255, 255); // ÇàÉ«
+  } else if (ledStates[i] == 6) {
+    color(led[i][0], led[i][1], led[i][2], 255, 0, 255); // ×ÏÉ«
+  } else if (ledStates[i] == 7) {
+    color(led[i][0], led[i][1], led[i][2], 255, 255, 255); // °×É«
+  } else if (ledStates[i] == 8) {
+    color(led[i][0], led[i][1], led[i][2], 255, 165, 0); // ³ÈÉ«
+  } else if (ledStates[i] == 0) {
+    color(led[i][0], led[i][1], led[i][2], 0, 0, 0); // ¹ØµÆ
+  }
+
+  Serial.printf("%d ok", ledStates[i]);
+}
+  // ÖØÖÃ°´Å¥×´Ì¬£¬½øÈë°´Å¥ÉÏ±¨½×¶Î
+  memset(buttonPressed, 0, sizeof(buttonPressed));
+  state = 2;
+}
+
+// ¼ì²â°´Å¥×´Ì¬²¢ÉÏ±¨ LED Ï¨ÃğĞÅÏ¢
+// ĞŞ¸ÄË¼Â·£ºµ±ÓĞ°´Å¥°´ÏÂÊ±£¬ÉèÖÃ°´Å¥×´Ì¬£»Ã¿¸öÑ­»·ÖÜÆÚÄÚ£¬Èç¹û¼ì²âµ½ĞÂµÄ°´ÏÂÇÒ¾àÀëÉÏ´ÎÉÏ±¨³¬¹ıãĞÖµ£¬ÔòÍ³Ò»ÉÏ±¨Ò»´Î
+void bottom() {
+  int allPressed = 1; // 1´ú±íËùÓĞµÆ¶¼ÒÑÏ¨Ãğ£¬0´ú±í»¹ÓĞµÆÁÁ
+  bool publishNeeded = false;
+
+  for (int i = 0; i < 4; i++) {
+    int currentState = digitalRead(buttonPins[i]); // ¶ÁÈ¡µ±Ç°°´Å¥×´Ì¬
+    if (currentState == HIGH && prevButtonStates[i] == LOW) { // ¼ì²âµ½ĞÂ°´ÏÂ¶¯×÷
+      if (buttonPressed[i] == 0) {
+        // ¹Ø±Õ¶ÔÓ¦ LED£¨È«¹Ø£©
+        color(led[i][0], led[i][1], led[i][2], 0, 0, 0);
+        buttonPressed[i] = 1;
+        publishNeeded = true;
+      }
+    }
+    prevButtonStates[i] = currentState;
+    if (buttonPressed[i] == 0) { // Ö»ÒªÓĞÈÎÒ»µÆÎ´Ï¨Ãğ£¬ÔòallPressedÎª0
+      allPressed = 0;
+    }
+  }
+
+  // Èç¹ûÓĞĞÂµÄ°´ÏÂÊÂ¼şÇÒ¾àÀëÉÏ´ÎÉÏ±¨³¬¹ı500ms£¬ÔòÉÏ±¨°´Å¥×´Ì¬
+  if (publishNeeded && (millis() - lastPublishTime > 500)) {
+    get_l(buttonPressed);
+    lastPublishTime = millis();
+  }
+  
+  // Èç¹ûÈ«²¿°´Å¥¾ùÒÑÉÏ±¨Ï¨Ãğ£¬ÔòÍË³ö°´Å¥¼à²â½×¶Î
+  if (allPressed) {
+    state = 0;
+  }
+}
+
+// ÉÏ±¨°´Å¥×´Ì¬¸øÔÆ¶Ë
+void get_l(int buttonPressed[4]) {
+  DynamicJsonDocument responseDoc(256);
+  JsonArray services = responseDoc.createNestedArray("services");
+  JsonObject service = services.createNestedObject();
+  service["service_id"] = "get_l";
+  JsonObject properties = service.createNestedObject("properties");
+
+  for (int i = 0; i < 4; i++) {
+    String key = "led" + String(i + 1);
+    properties[key] = buttonPressed[i]; // 0´ú±íÁÁ, 1´ú±íÃğ
+  }
+
+  String responseMessage;
+  serializeJson(responseDoc, responseMessage);
+  Serial.println(responseMessage);
+  if (client.publish(post_properties.c_str(), responseMessage.c_str())) {
+    Serial.println("Response sent success");
+  } else {
+    Serial.println("Error sending response");
+  }
+}
 
 void setup() {
-    // é…ç½® GPIO è¾“å‡ºå¼•è„šä¸ºè¾“å‡ºæ¨¡å¼
-    pinMode(LED_PIN, OUTPUT);
+  Serial.begin(115200); // ³õÊ¼»¯´®¿Ú
+  MQTT_Init();
+
+  // ÉèÖÃ RGB LED µÄÒı½ÅÎªÊä³öÄ£Ê½
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 3; j++) {
+     pinMode(led[i][j], OUTPUT);
+      Serial.printf("%d ", led[i][j]);  // Ê¹ÓÃ Serial.printf Êä³ö LED Òı½ÅºÅ
+      }
+  }
+for (int i = 0; i < 4; i++) {
+  pinMode(buttonPins[i], INPUT);
+}
+Serial.println("response");
 }
 
 void loop() {
-    // å®ç°æ¸äº®æ•ˆæœ
-    for (int i = 0; i < 256; i++) {
-        // è®¾ç½®äº®åº¦æ¨¡æ‹Ÿå€¼
-        analogWrite(LED_PIN, i);
-        // å»¶æ—¶ 10ms
-        delay(10);
-    }
+  // ±£Ö¤ MQTT Á¬½ÓÎÈ¶¨£¬²»¶Ï¼ì²é²¢ÖØÁ¬
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
 
-    // å®ç°æ¸ç­æ•ˆæœ
-    for (int i = 255; i >= 0; i--) {
-        // è®¾ç½®äº®åº¦æ¨¡æ‹Ÿå€¼
-        analogWrite(LED_PIN, i);
-        // å»¶æ—¶ 10ms
-        delay(10);
-    }
+  // µ±´¦ÓÚ°´Å¥²Ù×÷½×¶ÎÊ±¼ì²â°´Å¥×´Ì¬
+  if (state == 2) {
+    bottom();
+  }
+  delay(20); // Ïû¶¶ÑÓÊ±¼°½µµÍ¹¦ºÄ
 }

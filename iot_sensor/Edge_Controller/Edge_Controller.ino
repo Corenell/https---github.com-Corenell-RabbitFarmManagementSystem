@@ -214,7 +214,7 @@ void get_l(int buttonPressed[4]) {
   DynamicJsonDocument responseDoc(256);
   JsonArray services = responseDoc.createNestedArray("services");
   JsonObject service = services.createNestedObject();
-  service["service_id"] = "led";
+  service["service_id"] = "get_l";
   JsonObject properties = service.createNestedObject("properties");
 
   for (int i = 0; i < 4; i++) {

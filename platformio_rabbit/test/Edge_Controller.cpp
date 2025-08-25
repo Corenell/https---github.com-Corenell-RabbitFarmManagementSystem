@@ -17,9 +17,12 @@ int state = 0;                    // 云端接收值：0-空闲，2-等待按钮
 int buttonPressed[4] = {0, 0, 0, 0};      // 记录按钮是否已上报（0:未上报/亮, 1:已上报/灭）
 int prevButtonStates[4] = {LOW, LOW, LOW, LOW}; // 按钮前一次状态，用于滤除抖动/长按
 
+// 全局变量，保存 LED 状态
+int ledStates[4] = {0, 0, 0, 0};  
+
 // WiFi 和 MQTT 连接信息
-const char *ssid = "Creator_Space";
-const char *password = "iloveSCU";
+const char *ssid = "chenyu";
+const char *password = "cy383245";
 const char *mqttServer = "ef861ca468.st1.iotda-device.cn-north-4.myhuaweicloud.com";
 const int mqttPort = 1883;
 const char *clientId = "67b683d83f28ab3d0384f27e_leds_0_0_2025022411";
@@ -133,32 +136,47 @@ void color(int redPin, int greenPin, int bluePin, int redValue, int greenValue, 
 
 // 接收亮灯指令后执行亮灯函数
 void post_l(JsonDocument doc) {
-  int ledStates[4] = {
-    doc["content"]["led1"],
-    doc["content"]["led2"],
-    doc["content"]["led3"],
-    doc["content"]["led4"]
-  }; // 存储 LED 状态
+  JsonObject content = doc["content"];
 
-  for (int i = 0; i < 4; i++) {
-    // 根据不同状态控制 LED 颜色，可按需求修改颜色值
-    if (ledStates[i] == 1) {
-      color(led[i][0], led[i][1], led[i][2], 255, 0, 0); // 红色
-      Serial.printf("%d ok", ledStates[i]);
-    } else if (ledStates[i] == 2) {
-      color(led[i][0], led[i][1], led[i][2], 0, 255, 0); // 绿色示例
-      Serial.printf("%d ok", ledStates[i]);
-    } else if (ledStates[i] == 3) {
-      color(led[i][0], led[i][1], led[i][2], 0, 0, 255); // 蓝色示例
-      Serial.printf("%d ok", ledStates[i]);
-    } else if (ledStates[i] == 4) {
-      color(led[i][0], led[i][1], led[i][2], 255, 255, 0); // 黄色示例
-      Serial.printf("%d ok", ledStates[i]);
-    } else if (ledStates[i] == 0) {
-      color(led[i][0], led[i][1], led[i][2], 0, 0, 0); // 无色示例
-      Serial.printf("%d ok", ledStates[i]);
+  // 如果 JSON 中有对应的键，才更新，否则保持之前的值
+  if (content.containsKey("led1")) {
+    ledStates[0] = content["led1"].as<int>();
   }
+  if (content.containsKey("led2")) {
+    ledStates[1] = content["led2"].as<int>();
   }
+  if (content.containsKey("led3")) {
+    ledStates[2] = content["led3"].as<int>();
+  }
+  if (content.containsKey("led4")) {
+    ledStates[3] = content["led4"].as<int>();
+  }
+
+
+for (int i = 0; i < 4; i++) {
+  // 根据不同状态控制 LED 颜色
+  if (ledStates[i] == 1) {
+    color(led[i][0], led[i][1], led[i][2], 255, 0, 0); // 红色
+  } else if (ledStates[i] == 2) {
+    color(led[i][0], led[i][1], led[i][2], 0, 255, 0); // 绿色
+  } else if (ledStates[i] == 3) {
+    color(led[i][0], led[i][1], led[i][2], 0, 0, 255); // 蓝色
+  } else if (ledStates[i] == 4) {
+    color(led[i][0], led[i][1], led[i][2], 255, 255, 0); // 黄色
+  } else if (ledStates[i] == 5) {
+    color(led[i][0], led[i][1], led[i][2], 0, 255, 255); // 青色
+  } else if (ledStates[i] == 6) {
+    color(led[i][0], led[i][1], led[i][2], 255, 0, 255); // 紫色
+  } else if (ledStates[i] == 7) {
+    color(led[i][0], led[i][1], led[i][2], 255, 255, 255); // 白色
+  } else if (ledStates[i] == 8) {
+    color(led[i][0], led[i][1], led[i][2], 255, 165, 0); // 橙色
+  } else if (ledStates[i] == 0) {
+    color(led[i][0], led[i][1], led[i][2], 0, 0, 0); // 关灯
+  }
+
+  Serial.printf("%d ok", ledStates[i]);
+}
   // 重置按钮状态，进入按钮上报阶段
   memset(buttonPressed, 0, sizeof(buttonPressed));
   state = 2;
@@ -203,7 +221,7 @@ void get_l(int buttonPressed[4]) {
   DynamicJsonDocument responseDoc(256);
   JsonArray services = responseDoc.createNestedArray("services");
   JsonObject service = services.createNestedObject();
-  service["service_id"] = "led";
+  service["service_id"] = "get_l";
   JsonObject properties = service.createNestedObject("properties");
 
   for (int i = 0; i < 4; i++) {
@@ -213,6 +231,7 @@ void get_l(int buttonPressed[4]) {
 
   String responseMessage;
   serializeJson(responseDoc, responseMessage);
+  Serial.println(responseMessage);
   if (client.publish(post_properties.c_str(), responseMessage.c_str())) {
     Serial.println("Response sent success");
   } else {
