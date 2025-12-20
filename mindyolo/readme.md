@@ -1,3 +1,71 @@
+## YOLO 模型转换指南：PyTorch (.pt) → OrangePi Kunpeng Pro (.om)
+
+本指南详细说明了如何将 YOLO 系列模型（PyTorch `.pt` 格式）转换为适配 OrangePi Kunpeng Pro（搭载 Ascend 310B4 NPU）的离线推理模型（`.om` 格式）。
+
+## 🗓 转换流程概览
+
+整个转换过程分为两个主要阶段：
+1.  **PC 端**：将 `.pt` 权重文件导出为标准 `.onnx` 格式。
+2.  **开发板端**：将 `.onnx` 文件转换为昇腾 NPU 专用的 `.om` 格式。
+
+---
+
+## 🛠 步骤一：导出 ONNX 模型 (PC端)
+
+在安装了 YOLO 环境（Ultralytics）的 PC 或服务器上执行此步骤。
+
+假设你的原始模型文件名为 `liuchan.pt`，请运行以下命令：
+
+```bash
+# 导出模型
+yolo export model=path/to/liuchan.pt format=onnx opset=11 simplify=True dynamic=False
+```
+✅ 结果：转换完成后，当前目录下会生成 liuchan.onnx 文件。
+
+## 步骤二：环境连接与文件传输
+1. 连接 OrangePi
+确保 OrangePi Kunpeng Pro 已连接网络。
+
+    获取 IP：在开发板终端输入 ifconfig 或在路由器后台查询 IP 地址。
+
+    SSH 登录：在 PC 端终端执行：
+
+    ssh HwHiAiUser@<开发板IP地址>
+    例如: ssh HwHiAiUser@192.168.1.100
+
+2. 传输文件
+使用 SFTP 客户端（如 FileZilla, MobaXterm）或 scp 命令，将生成的 liuchan.onnx 上传至开发板的工作目录。
+
+3. 配置环境变量 (开发板端)
+重要：在执行转换工具前，必须加载 CANN 工具包的环境变量。在开发板终端执行：
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
+
+## ⚙️ 步骤三：转换为 OM 模型 (开发板端)
+在开发板上使用 atc (Ascend Tensor Compiler) 工具进行最终转换。
+
+请直接复制并运行以下命令：
+
+```Bash
+atc --model=liuchan.onnx \
+    --framework=5 \
+    --output=liuchan \
+    --input_format=NCHW \
+    --input_shape="images:1,3,640,640" \
+    --log=error \
+    --soc_version=Ascend310B4 \
+    --op_select_implmode=high_precision
+```
+⏳ 注意：此步骤涉及图编译和算子优化，耗时较长（可能需要几分钟），请耐心等待。
+
+✅ 结果验证
+当终端显示 ATC run success 时，表示转换成功。当前目录下将生成目标文件：
+```bash
+liuchan.om
+```
+
+现在，该模型即可用于在 OrangePi Kunpeng Pro 上进行 NPU 加速推理。
+
+
 # 项目进展日志
 
 ### 2025年1月17日，早上5:10
