@@ -9,10 +9,10 @@ import acl
 
 # ================= 配置区域 =================
 # 1. OM 模型路径 (你的新模型)
-MODEL_PATH = "/home/HwHiAiUser/rabbits/models/liuchan_v8.om"
+MODEL_PATH = "/home/HwHiAiUser/rabbits/models/liuchan.om"
 
-# 2. 图片路径
-TARGET_IMAGE_PATH = "/home/HwHiAiUser/rabbits/images/liuchan1.jpeg"
+# 2. 图片路径   
+TARGET_IMAGE_PATH = "/home/HwHiAiUser/rabbits/images/paoliao4.jpeg"
 
 # 3. 置信度阈值
 CONF_THRESHOLD = 0.5
@@ -42,13 +42,45 @@ class YoloOM:
         self.input_w = input_dims['dims'][3]
         print(f"【模型加载成功】输入尺寸: {self.input_w}x{self.input_h}")
 
+    # def preprocess(self, image):
+    #     # Resize -> RGB -> Normalize -> Transpose(CHW)
+    #     img_resized = cv2.resize(image, (self.input_w, self.input_h))
+    #     img_rgb = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)
+    #     img_data = img_rgb.astype(np.float32) / 255.0
+    #     img_data = img_data.transpose(2, 0, 1) 
+    #     return np.ascontiguousarray(img_data)
+
     def preprocess(self, image):
-        # Resize -> RGB -> Normalize -> Transpose(CHW)
-        img_resized = cv2.resize(image, (self.input_w, self.input_h))
-        img_rgb = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)
+        # === 进阶优化：Letterbox 预处理 (保持长宽比) ===
+        shape = image.shape[:2]  # current shape [height, width]
+        new_shape = (self.input_w, self.input_h)
+
+        # 计算缩放比例
+        r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])
+        
+        # 计算 Padding
+        new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
+        dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
+        
+        # 为了 NPU 推理稳定，通常两边平均补灰条
+        dw /= 2  
+        dh /= 2
+
+        if shape[::-1] != new_unpad:  # resize
+            image = cv2.resize(image, new_unpad, interpolation=cv2.INTER_LINEAR)
+            
+        top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
+        left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
+        
+        # 填充灰边 (RGB: 114, 114, 114)
+        img_padded = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(114, 114, 114))
+
+        # 后续步骤不变
+        img_rgb = cv2.cvtColor(img_padded, cv2.COLOR_BGR2RGB)
         img_data = img_rgb.astype(np.float32) / 255.0
         img_data = img_data.transpose(2, 0, 1) 
         return np.ascontiguousarray(img_data)
+    
 
     def infer(self, image_path, conf_threshold=0.8):
         if not os.path.exists(image_path): 

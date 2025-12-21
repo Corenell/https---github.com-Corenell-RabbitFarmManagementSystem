@@ -10,10 +10,10 @@ from ultralytics import YOLO
 MODEL_PATH = "/home/HwHiAiUser/rabbits/models/paoliao.pt"
 
 # 2. 图片路径
-IMAGE_PATH = "/home/HwHiAiUser/rabbits/images/paoliao2.jpeg"
+IMAGE_PATH = "/home/HwHiAiUser/rabbits/images/liuchan2.jpeg"
 
 # 3. 置信度阈值
-CONF_THRESHOLD = 0.8
+CONF_THRESHOLD = 0.5
 # ===========================================
 
 def load_model():
@@ -39,7 +39,7 @@ def process_image(model, image_path, conf_threshold):
     try:
         # device='cpu': 强制使用 CPU
         # verbose=False: 关闭详细日志，防止刷屏
-        results = model(image_path, conf=conf_threshold, device='cpu', verbose=False)
+        results = model(image_path, conf=0.01, device='cpu', verbose=False)
 
         is_detected = False
 
@@ -55,6 +55,8 @@ def process_image(model, image_path, conf_threshold):
                     cls_id = int(box.cls[0])
                     # 获取类别名称 (如果有names映射)
                     cls_name = model.names[cls_id] if model.names else str(cls_id)
+
+                    print(f"  -> [候选] 类别: {cls_name:<10} | 置信度: {score:.4f}", end="")
 
                     # 再次确认是否大于阈值（虽然 model推理时已经过滤了一次，这里双重保险）
                     if score > conf_threshold:
@@ -76,20 +78,11 @@ def main():
     print("系统启动，开始监听...")
     print(f"当前监控图片: {IMAGE_PATH}")
 
-    while True:
-        # 执行检测
-        if process_image(model, IMAGE_PATH, CONF_THRESHOLD):
+    if process_image(model, IMAGE_PATH, CONF_THRESHOLD):
             # === 信号触发逻辑 ===
-            print(f"[{time.strftime('%H:%M:%S')}] *** 信号触发：目标确认！***\n")
-            
-            # 可以在这里添加 GPIO 控制代码
-        else:
+        print(f"[{time.strftime('%H:%M:%S')}] *** 信号触发：目标确认！***\n")
+    else:
             # 如果没检测到，可以选择打印，也可以选择静默
-            # print(f"[{time.strftime('%H:%M:%S')}] 未检测到目标")
-            pass
-
-        # 每隔 5 秒检测一次
-        time.sleep(5)
-
+        print(f"[{time.strftime('%H:%M:%S')}] 未检测到目标")
 if __name__ == "__main__":
     main()
