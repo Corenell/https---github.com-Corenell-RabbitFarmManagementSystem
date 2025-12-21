@@ -7,7 +7,7 @@ from ultralytics import YOLO
 
 # ================= 配置区域 =================
 # 1. 模型路径
-MODEL_PATH = "/home/HwHiAiUser/rabbits/models/paoliao.pt"
+MODEL_PATH = "/home/HwHiAiUser/rabbits/models/liuchan.pt"
 
 # 2. 图片路径
 IMAGE_PATH = "/home/HwHiAiUser/rabbits/images/liuchan2.jpeg"

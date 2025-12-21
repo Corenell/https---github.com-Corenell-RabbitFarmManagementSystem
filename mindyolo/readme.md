@@ -66,6 +66,45 @@ liuchan.om
 现在，该模型即可用于在 OrangePi Kunpeng Pro 上进行 NPU 加速推理。
 
 
+## 模型推理开机自启动：
+## 1 打开服务配置文件：
+```bash
+sudo nano /etc/systemd/system/yolo_web.service
+```
+## 2 编辑此文件（已经编辑好了，可以使用cat查看）
+## 3 刷新配置并重启服务
+### 1. 刷新配置
+```bash
+sudo systemctl daemon-reload
+```
+### 2. 重启服务
+```bash
+sudo systemctl restart yolo_web.service
+```
+### 3. 查看状态
+```bash
+sudo systemctl status yolo_web.service
+```
+### 4 如何查看程序的 print 输出？
+由于程序在后台运行，你看不到屏幕打印。如果需要查看 print 的内容（比如推理结果、报错信息），请使用以下命令查看实时日志：
+```bash
+sudo journalctl -u yolo_web.service -f
+```
+临时停止：
+```bash
+sudo systemctl stop yolo_web.service
+```
+## 彻底停止 (禁止开机自启)：
+### 1. 现在停止运行
+```bash
+sudo systemctl stop yolo_web.service
+```
+
+### 2. 禁用开机自启
+```bash
+sudo systemctl disable yolo_web.service
+```
+
 # 项目进展日志
 
 ### 2025年1月17日，早上5:10
