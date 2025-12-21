@@ -1,3 +1,25 @@
+## 初始配置
+orangPi kunpeng pro连接局域网：
+路由器在208
+```bash
+wifi名：chenyu
+密码：cy383245
+```
+```bash
+ssh局域网登陆香橙派即可操作
+用户名：HwHiAiUser
+密码：Mind@123
+```
+
+### 登陆后，项目文件在rabbits/
+```bash
+#已经设置了开机自启动，可以先使用如下命令暂时关闭后再手动启动
+sudo systemctl stop yolo_web.service
+#启动模型推理
+cd rabbits/scripts
+python liuchan_paoliao_liaocao_om.py
+```
+
 ## YOLO 模型转换指南：PyTorch (.pt) → OrangePi Kunpeng Pro (.om)
 
 本指南详细说明了如何将 YOLO 系列模型（PyTorch `.pt` 格式）转换为适配 OrangePi Kunpeng Pro（搭载 Ascend 310B4 NPU）的离线推理模型（`.om` 格式）。
