@@ -146,7 +146,7 @@ def main():
         # 3. 模型 2 推理
         print(">>> [Paoliao] 开始推理...")
         t1 = time.time()
-        res_paoliao = yolo_paoliao.infer(TARGET_IMAGE_PATH, CONF_THRESHOLD)
+        # res_paoliao = yolo_paoliao.infer(TARGET_IMAGE_PATH, CONF_THRESHOLD)
         print(f"    [Paoliao] 耗时: {(time.time() - t1) * 1000:.2f}ms, 结果: {'发现目标' if res_paoliao else '未发现'}")
 
     except Exception as e:

@@ -190,15 +190,11 @@ if __name__ == "__main__":
     print(">>> 正在加载模型，请稍候...")
     if os.path.exists(MODEL_PATH_1):
         yolo_liuchan = YoloOM(MODEL_PATH_1)
-        # res = yolo_liuchan.infer(SAVE_PATH_YICHANG, CONF_THRESHOLD)  # 预热
-        # print(f"Liuchan : {'Yes' if res else 'No'}")
     else:
         print(f"Warning: Model 1 not found at {MODEL_PATH_1}")
 
     if os.path.exists(MODEL_PATH_2):
         yolo_paoliao = YoloOM(MODEL_PATH_2)
-        # res = yolo_paoliao.infer(SAVE_PATH_YICHANG, CONF_THRESHOLD)  # 预热
-        # print(f"Paoliao : {'Yes' if res else 'No'}")
     else:
         print(f"Warning: Model 2 not found at {MODEL_PATH_2}")
 
@@ -209,7 +205,4 @@ if __name__ == "__main__":
 
     print(">>> 模型加载完毕，Web服务启动 (Port 80)")
     
-    # 3. 启动 Flask 
-    # 【关键】必须设置 threaded=False 或者 processes=1
-    # 因为 ACL context 是线程绑定的，多线程模式会导致路由函数找不到上下文报错
     app.run(host="0.0.0.0", port=5000, threaded=False)
