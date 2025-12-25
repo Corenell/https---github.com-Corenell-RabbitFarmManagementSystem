@@ -10,22 +10,32 @@ wifi名：LJXY
 ssh局域网登陆香橙派即可操作
 用户名：HwHiAiUser
 密码：Mind@123
+
+SSH 登录：在 PC 端终端执行：
+ssh HwHiAiUser@<开发板IP地址> 例如: ssh HwHiAiUser@192.168.1.100
+建议使用termius软件客户端，方便传输本地PC的项目文件到香橙派
 ```
 
 ### 登陆后，项目文件在rabbits/
 #### 模型==》models/
 #### 脚本==》scripts/
 目前项目只涉及了如下脚本：
+
 esp_image.py--拍照
+
 model_service.py--模型
+
 main.py--和华为云iot对接的mqtt协议配置和启动整个作业流程
+
 ```bash
 #直接启动项目
 python main.py
 ```
 #### 图像==》images/
 
-#### 看到这就可以了，下面基本与项目启动与修改无关。
+## 看到这就可以了，下面基本与项目启动与修改无关。
+
+
 ```bash
 #这是旧的项目文件，现在废弃了，但是仍会开机自启动，会占用npu资源，可以关一下
 #已经设置了开机自启动，可以先使用如下命令暂时关闭后再手动启动
@@ -89,7 +99,7 @@ atc --model=liuchan.onnx \
     --input_format=NCHW \
     --input_shape="images:1,3,640,640" \
     --log=error \
-    --soc_version=Ascend310B4 \
+    --soc_version=Ascend310B4 \ #8TOPS是B4 20TOS是B1
     --op_select_implmode=high_precision
 ```
 ⏳ 注意：此步骤涉及图编译和算子优化，耗时较长（可能需要几分钟），请耐心等待。
@@ -141,7 +151,7 @@ sudo systemctl stop yolo_web.service
 ```bash
 sudo systemctl disable yolo_web.service
 ```
-
+# 以下是许盛凯大创做的mindYOLO部分，部署在atlas 上的，和香橙派无关
 # 项目进展日志
 
 ### 2025年1月17日，早上5:10
